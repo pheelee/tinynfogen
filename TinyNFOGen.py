@@ -29,13 +29,13 @@ sys.path.insert(0, PROJECT_ROOT)
 # Imports
 #===========================================================================
 
-import json
 import ConfigParser
 import logging
+import urllib2
 from logging import handlers
 from argparse import ArgumentParser
 from time import mktime,localtime
-from classes.movie import Movie,Request
+from classes.movie import Movie
 from classes.nfo import NFO
 from classes.mover import Mover
 from classes.log import TNGLog
@@ -152,9 +152,9 @@ if __name__ == '__main__':
     
     if useProxy == 'True':
         log.info('Using Proxy')
-        proxy = Request()
-        proxy.proxyURL = config.get('Network', 'proxy')
-        proxy.InstallProxy()
+        httpproxy = urllib2.ProxyHandler({'http':config.get('Network', 'proxy')})
+        opener = urllib2.build_opener(httpproxy)
+        urllib2.install_opener(opener)
     
       
         
@@ -177,48 +177,41 @@ if __name__ == '__main__':
             
             log.debug("Processing: %s" % item)
             
-            #Create the Movie Object
+            #===================================================================
+            # Create the Movie Object
+            #===================================================================
             try:
-                movie = Movie(os.path.join(rootPath,item))
-            except Exception as e:
-                log.error("%s: %s" % (item,e))
+                movie = Movie(os.path.join(rootPath,item),args.language,config.get('TMDB', 'apikey'))
+            except Exception:
                 continue
+            #===================================================================
+            # Get Movie Details from TMDB
+            #===================================================================
 
-            #Create the Request Object
-            movie.Request = Request(config.get('TMDB', 'apikey'))
 
-            movie.GetID()
+            movie.RenameFolder(args.forceRename)
+            movie.rename_files(args.forceRename)
+  
+
+            if args.globalNFOName:
+                movie._newFiles['nfo'][0] = args.globalNFOName
                 
-            #If we don't get an ID we pass to next Movie
-            if movie.id == False:
-                log.warning('No Match found : %s' % (movie.Name + ' ' + movie.Year)) 
-                #movie.WriteDebugData()
-            else:
-                movie.GetDetailedMovieInfos(args.language)
-                if movie.infos != False:
-                    #If we have the Information we rename the Folder and Files
-                    movie.RenameFolder(args.forceRename)
-                    movie.RenameFiles(args.forceRename)    
+            movie.NFO = NFO(movie._newFiles['nfo'][0],movie.infos)
+            exists = movie.HasTNGnfo()
+            #Remove unwanted files from directory
+            movie.clean(('srf','sub','srr','sfv','sft','jpg','tbn','idx','nfo'))
+            log.debug('Cleaned files: %s' % (movie.Name + movie.Year))
+            if  not ((exists == True) and (args.ignoreTNGnfo == False)):
+                #Write new NFO
+                movie.NFO.Write(BoxeeBoxDict)
+                log.info('NFO generated : %s' % (movie.Name + movie.Year)) 
 
-                    if args.globalNFOName:
-                        movie.nfoname = args.globalNFOName
-                        
-                    movie.NFO = NFO(os.path.join(movie.path, movie.nfoname),movie.infos)
-                    exists = movie.HasTNGnfo()
-                    #Remove unwanted files from directory
-                    movie.CleanFiles(('srf','sub','srr','sfv','sft','jpg','tbn','idx','nfo'))
-                    log.debug('Cleaned files: %s' % (movie.Name + movie.Year))
-                    if  not ((exists == True) and (args.ignoreTNGnfo == False)):
-                        #Write new NFO
-                        movie.NFO.Write(BoxeeBoxDict)
-                        log.info('NFO Generated : %s' % (movie.Name + movie.Year)) 
-
-                    #Get Fanart and Poster
-                    movie.GetImages()
-                        
-                    #Move the Movie
-                    if not mover == False:
-                        mover.move(movie.path,args.forceOverwrite)
+            #Get Fanart and Poster
+            movie.GetImages()
+                
+            #Move the Movie
+            if not mover == False:
+                mover.move(movie.path,args.forceOverwrite)
                         
                         
     #===========================================================================

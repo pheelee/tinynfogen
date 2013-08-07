@@ -108,7 +108,7 @@ class Mover(object):
         
         if self._is_number(_letter):
             _letter = 'A' #For now we put Movies beginning with a Number to Folder A-
-	elif _letter.isalnum() == False: #if we have a special char, we search for the first Alphabetic Char
+        elif _letter.isalnum() == False: #if we have a special char, we search for the first Alphabetic Char
             _letter = self._getFirstAlphaChar(os.path.basename(name))
 		
 		
