@@ -88,6 +88,10 @@ if __name__ == '__main__':
     #===========================================================================
     # Logging
     #===========================================================================
+    
+    logpath = os.path.abspath(os.path.join(LogFile, os.pardir))
+    if not os.path.isdir(logpath):
+        os.mkdir(logpath)
     #Create the wrapper log instance
     log = TNGLog()
 
