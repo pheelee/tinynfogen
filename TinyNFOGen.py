@@ -11,10 +11,6 @@ Search URL: http://api.themoviedb.org/3/search/movie?api_key=xxx&query=after+the
 Detail URL: http://api.themoviedb.org/3/movie/10589?api_key=xxx&language=de
 
 
-ToDo:
-- Improved Error Handling
-- overwrite NFO Parameter
-
 '''
 import os,sys,signal
 
