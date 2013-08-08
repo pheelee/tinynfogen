@@ -112,6 +112,7 @@ class Movie(object):
                 os.remove(os.path.join(self.path,i))
     
     def rename(self,force):
+        
         self._rename_folder(force)
         self._rename_files(force)
     
@@ -144,6 +145,7 @@ class Movie(object):
             except OSError as e:
                 self.log.error(e)
             #Convert newPath back to unicode and pass to self.path
+            self._update_files_path(self.path, newPath.decode('utf-8'))
             self.path = newPath.decode('utf-8')
             self.log.info("Movie renamed: %s" % newName)
     
@@ -189,7 +191,13 @@ class Movie(object):
             self.Year = '(%s)' % self.infos['release_date'][0:4]
         else:
             self.infos = False
-            
+    
+    def _update_files_path(self,old,new):
+        for key in self.files.keys():
+            for index,value in enumerate(self.files[key]):
+                current = self.files[key][index]
+                self.files[key][index] = current.replace(old,new)
+    
     def _GetFileType(self,path,fileext):
         rfile = []
         for root,dirs,files in os.walk(path):
