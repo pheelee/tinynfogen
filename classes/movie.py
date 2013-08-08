@@ -111,6 +111,10 @@ class Movie(object):
             if os.path.splitext(i)[1].lstrip('.') in extensions:
                 os.remove(os.path.join(self.path,i))
     
+    def rename(self,force):
+        self._RenameFolder(force)
+        self._rename_files(force)
+    
     def SearchIDbyTitle(self):
         found = False
         for result in self.tmdb.searchResult['results']:
@@ -124,7 +128,7 @@ class Movie(object):
     def HasTNGnfo(self):
         return self.NFO.CheckElement(u'generated', u'422344cf76177667d7d3fded1e7538df')
 
-    def RenameFolder(self,force):
+    def _RenameFolder(self,force):
            
         currentName = (os.path.basename(self.path))
         newName = self.infos['title'] + ' ' + self.Year
@@ -143,7 +147,7 @@ class Movie(object):
             self.path = newPath.decode('utf-8')
             self.log.info("Movie renamed: %s" % newName)
     
-    def rename_files(self,force):
+    def _rename_files(self,force):
         
         
         
@@ -176,30 +180,7 @@ class Movie(object):
                 os.rename(self.files[key][index], self._newFiles[key][index])
                 self.log.info('moved: %s' % value)
     
-    def RenameFiles(self,force):       
-        if self.multiCDMovie == True:
-            return 1
-        else:
-            for f in os.listdir(self.path):
-                if not f.startswith(self._IgnoreFilePrefix):
-                    f = self._force_decode(f)
-                    fullname = os.path.splitext(os.path.join(self.path,f))
-                    currentName =  self._force_decode(os.path.basename(fullname[0]))
-                    #currentName = os.path.basename(fullname[0])                
-
-                    newName = self.infos['title'] + ' ' + self.Year
-                    
-                    if currentName != newName or force == True:
-                        newName = os.path.join(self.path,f.replace(currentName,self._MakeSMBfriendly(newName)))
-
-                        try:
-                            curPath = os.path.join(self.path,f)
-                            os.rename(curPath, newName.encode('utf-8'))
-                        except OSError:
-                            pass
-                        m = self._GetMovieFile()
-                        self.nfoname = m.replace(os.path.splitext(m)[1],'.nfo')
-                
+  
     def _GetDetailedMovieInfos(self, language):
         _infos = self.tmdb.GetMovieDetails(self.id,language)
         if len(_infos) > 0:

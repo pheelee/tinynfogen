@@ -184,32 +184,44 @@ if __name__ == '__main__':
                 movie = Movie(os.path.join(rootPath,item),args.language,config.get('TMDB', 'apikey'))
             except Exception:
                 continue
+            
             #===================================================================
-            # Get Movie Details from TMDB
+            # Rename the Folder and Files
             #===================================================================
+            movie.rename(args.forceRename)
 
 
-            movie.RenameFolder(args.forceRename)
-            movie.rename_files(args.forceRename)
-  
-
+            #===================================================================
+            # Prepare NFO name and check if already created by tinynfogen
+            #===================================================================
             if args.globalNFOName:
                 movie._newFiles['nfo'][0] = args.globalNFOName
                 
             movie.NFO = NFO(movie._newFiles['nfo'][0],movie.infos)
             exists = movie.HasTNGnfo()
-            #Remove unwanted files from directory
+            
+            #===================================================================
+            # Remove unwanted files from directory
+            #===================================================================
             movie.clean(('srf','sub','srr','sfv','sft','jpg','tbn','idx','nfo'))
             log.debug('Cleaned files: %s' % (movie.Name + movie.Year))
+            
+            #===================================================================
+            # Create the new NFO File
+            #===================================================================
             if  not ((exists == True) and (args.ignoreTNGnfo == False)):
                 #Write new NFO
                 movie.NFO.Write(BoxeeBoxDict)
                 log.info('NFO generated : %s' % (movie.Name + movie.Year)) 
 
-            #Get Fanart and Poster
+            #===================================================================
+            # Get Fanart and Poster
+            #===================================================================
             movie.GetImages()
                 
-            #Move the Movie
+            #===================================================================
+            # Move the Movie
+            #===================================================================
             if not mover == False:
                 mover.move(movie.path,args.forceOverwrite)
                         
