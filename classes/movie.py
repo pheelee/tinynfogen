@@ -4,7 +4,7 @@ Created on 29.03.2013
 @author: ritterph
 '''
 
-import os, re
+import os, re, shutil
 from nfo import NFO
 import urllib2
 import json
@@ -107,12 +107,12 @@ class Movie(object):
     def clean(self,extensions):
         for i in os.listdir(self.path):
             if os.path.isdir(os.path.join(self.path,i)):
-                os.remove(os.path.join(self.path,i))
+                shutil.rmtree(os.path.join(self.path,i))
             if os.path.splitext(i)[1].lstrip('.') in extensions:
                 os.remove(os.path.join(self.path,i))
     
     def rename(self,force):
-        self._RenameFolder(force)
+        self._rename_folder(force)
         self._rename_files(force)
     
     def SearchIDbyTitle(self):
@@ -128,7 +128,7 @@ class Movie(object):
     def HasTNGnfo(self):
         return self.NFO.CheckElement(u'generated', u'422344cf76177667d7d3fded1e7538df')
 
-    def _RenameFolder(self,force):
+    def _rename_folder(self,force):
            
         currentName = (os.path.basename(self.path))
         newName = self.infos['title'] + ' ' + self.Year
