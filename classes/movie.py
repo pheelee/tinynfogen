@@ -174,10 +174,9 @@ class Movie(object):
         # Move/Rename the Files
         #=======================================================================
         
-        for key in self._newFiles.keys():
-            for index,value in enumerate(self._newFiles[key]):
-                os.rename(self.files[key][index], self._newFiles[key][index])
-                self.log.info('moved: %s' % value)
+        for index,value in enumerate(self._newFiles['video']):
+            os.rename(self.files['video'][index], self._newFiles['video'][index])
+            self.log.info('moved: %s' % value)
     
   
     def _GetDetailedMovieInfos(self, language):
