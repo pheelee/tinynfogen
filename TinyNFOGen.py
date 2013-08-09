@@ -194,7 +194,7 @@ if __name__ == '__main__':
             # Prepare NFO name and check if already created by tinynfogen
             #===================================================================
             if args.globalNFOName:
-                movie._newFiles['nfo'][0] = args.globalNFOName
+                movie._newFiles['nfo'][0] = os.path.join(movie.path,args.globalNFOName)
                 
             movie.NFO = NFO(movie._newFiles['nfo'][0],movie.infos)
             
