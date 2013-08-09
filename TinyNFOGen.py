@@ -76,7 +76,6 @@ if __name__ == '__main__':
     parser.add_argument('--src',dest='rootFolder',type=unicode,required=True,help='The root folder where the movies are')
     parser.add_argument('--dst',dest='destFolder',type=unicode,required=False,help='The folder where the movies should be put to after processing')
     parser.add_argument('-f',dest='forceRename',action='store_true',help='Forces Folder and File renaming for all items')
-    parser.add_argument('-i',dest='ignoreTNGnfo',action='store_true',help='Ignores an existing TNG NFO and recreates it')
     parser.add_argument('-o',dest='forceOverwrite',action='store_true',help='Forces overwriting of existing movies in destination')
     parser.add_argument('-updateXBMC',dest='forceXBMCUpdate',action='store_true',help='Forces update of XBMC Library (regardless of config setting)')
     parser.add_argument('-v',dest='debugMode',action='store_true',help='Script Output is more verbose')
@@ -198,7 +197,6 @@ if __name__ == '__main__':
                 movie._newFiles['nfo'][0] = args.globalNFOName
                 
             movie.NFO = NFO(movie._newFiles['nfo'][0],movie.infos)
-            exists = movie.HasTNGnfo()
             
             #===================================================================
             # Remove unwanted files from directory
@@ -209,10 +207,9 @@ if __name__ == '__main__':
             #===================================================================
             # Create the new NFO File
             #===================================================================
-            if  not ((exists == True) and (args.ignoreTNGnfo == False)):
-                #Write new NFO
-                movie.NFO.Write(BoxeeBoxDict)
-                log.info('NFO generated : %s' % (movie.Name + movie.Year)) 
+            #Write new NFO
+            movie.NFO.Write(BoxeeBoxDict)
+            log.info('NFO generated : %s' % (movie.Name + movie.Year)) 
 
             #===================================================================
             # Get Fanart and Poster

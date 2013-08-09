@@ -126,9 +126,6 @@ class Movie(object):
                  
         return found
 
-    def HasTNGnfo(self):
-        return self.NFO.CheckElement(u'generated', u'422344cf76177667d7d3fded1e7538df')
-
     def _rename_folder(self,force):
            
         currentName = (os.path.basename(self.path))
