@@ -116,7 +116,7 @@ class Movie(object):
         self._rename_folder(force)
         self._rename_files(force)
     
-    def SearchIDbyTitle(self):
+    def _SearchIDbyTitle(self):
         found = False
         for result in self.tmdb.searchResult['results']:
             if result['original_title'] == self.Name:
@@ -154,14 +154,14 @@ class Movie(object):
         # Build the new Paths
         #=======================================================================
         
-        nameprefix = self.infos['title'] + ' ' + self.Year
+        nameprefix = self._MakeSMBfriendly(self.infos['title'] + ' ' + self.Year)
         
         if len(self.files['video']) > 1:
             self._newFiles['nfo'].insert(0,os.path.join(self.path,'movie.nfo'))
             for index,video in enumerate(self.files['video']):
                 if re.search('cd[1-9]', video.lower()):
                     
-                    _moviename = self._MakeSMBfriendly(nameprefix + ' ' + re.findall('cd[1-9]',video.lower())[0])
+                    _moviename = nameprefix + ' ' + re.findall('cd[1-9]',video.lower())[0]
                     _extension = os.path.splitext(self.files['video'][index])[1]
                     self._newFiles['video'].insert(index,os.path.join(self.path,_moviename +_extension))
         else:
@@ -232,11 +232,14 @@ class Movie(object):
             elif self.tmdb.searchResult['total_results'] == 1:
                 _id = self.tmdb.ParseID()
             elif self.tmdb.searchResult['total_results'] > 1:
-                _id = self.SearchIDbyTitle()
+                _id = self._SearchIDbyTitle()
             else:
                 raise Exception("No Match found")
     
-        return _id
+        if _id == False:
+            raise Exception("Could not get ID")
+        else:
+            return _id
     
     def _GetYear(self,string):
         pattern = re.compile('(\\(\d{4}\\))')
