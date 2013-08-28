@@ -94,7 +94,7 @@ if __name__ == '__main__':
     #Create the wrapper log instance
     log = TNGLog()
 
-    formatter = logging.Formatter('%(asctime)s [%(levelname)-8s] %(message)s', '%H:%M:%S')
+    formatter = logging.Formatter('%(asctime)s [%(levelname)-8s] %(message)s', '%d-%m-%Y %H:%M:%S')
     
     #Initialize the File Logger
     hdlr = handlers.RotatingFileHandler(os.path.join(LogFile), 'a', 524288, 10)
