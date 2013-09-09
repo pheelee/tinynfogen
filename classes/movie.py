@@ -312,9 +312,13 @@ class tmdb():
     port        = 80
     
     def __init__(self,apikey):
-        self.apikey = apikey
-        self.log = TNGLog()
-        self.urls['images'] = self._GetImageURL() + 'original'
+        try:
+            self.apikey = apikey
+            self.log = TNGLog()
+            self.urls['images'] = self._GetImageURL() + 'original'
+        except Exception as e:
+            self.log.error(unicode(e))
+            raise Exception("Failed to create Request Object")
 
     def SearchMovie(self,string):
         url = self.host + self.urls['search'] % self.apikey + self._CreateQuery(string)
