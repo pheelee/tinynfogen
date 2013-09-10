@@ -58,13 +58,12 @@ class Movie(object):
         self._newFiles['video'] = []
         self._newFiles['nfo'] = []
         self.infos = u''
-        self.tmdb = tmdb(apikey)
         self.NFO = u''
         self.nfoname = u''
         self.path = path
         self.log = TNGLog()
         self.id = False
-
+        
         try:
             #=======================================================================
             # Get Paths for all Items in current movie
@@ -79,15 +78,17 @@ class Movie(object):
             self.Name = self._GetNamefromFolder(os.path.basename(path))
             self.Year = self._GetYear(os.path.basename(path))
             
-            #=======================================================================
-            # Get an IMDB ID
-            #=======================================================================
-            self.id = self._GetID()
-            
-            #===================================================================
-            # Get detailed Movie Information and store them in self.infos
-            #===================================================================
-            self._GetDetailedMovieInfos(language)
+            if len(apikey) > 0:
+                self.tmdb = tmdb(apikey)
+                #=======================================================================
+                # Get an IMDB ID
+                #=======================================================================
+                self.id = self._GetID()
+                
+                #===================================================================
+                # Get detailed Movie Information and store them in self.infos
+                #===================================================================
+                self._GetDetailedMovieInfos(language)
 
         except Exception as e:
             self.log.error("%s: %s" % (self.Name + ' ' + self.Year,e))
