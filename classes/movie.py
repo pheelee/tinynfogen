@@ -49,9 +49,9 @@ class Movie(object):
                  #Path to the Folder containing the Movie
                  path,
                  #Language for the Movie
-                 language,
+                 language = '',
                  #ApiKey for TMDB
-                 apikey):
+                 apikey = ''):
 
         self.files = {}
         self._newFiles = {}
