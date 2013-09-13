@@ -74,7 +74,7 @@ class Movie(object):
             self.files['video'] = self._GetFileType(self.path, ('.mkv','.mp4','.mov','.mpg','.avi','.mpeg'))
             self.files['nfo'] = self._GetFileType(self.path, '.nfo')
             if globalNFOName is not None:
-                self.files['nfo'].append('%s\%s' % (self.path,globalNFOName))
+                self.files['nfo'].append(self.path + os.sep + globalNFOName)
             self.files['image'] = self._GetFileType(self.path, ('.jpg','.jpeg','.png','.tbn'))
     
             #=======================================================================
