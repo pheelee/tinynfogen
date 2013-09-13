@@ -210,7 +210,7 @@ class Movie(object):
             for item in files:
                 if os.path.splitext(item)[1] in fileext:
                     if minSize is not None:
-                        if os.path.getsize(item) / 1024 / 1024 > minSize:
+                        if os.path.getsize(os.path.join(root,item)) / 1024 / 1024 > minSize:
                             rfile.append(os.path.join(root,item))
                     else:
                         rfile.append(os.path.join(root,item))
