@@ -51,7 +51,10 @@ class Movie(object):
                  #Language for the Movie
                  language = '',
                  #ApiKey for TMDB
-                 apikey = ''):
+                 apikey = '',
+                 #Global NFO Name
+                 globalNFOName = None
+                 ):
 
         self.files = {}
         self._newFiles = {}
@@ -70,6 +73,8 @@ class Movie(object):
             #=======================================================================
             self.files['video'] = self._GetFileType(self.path, ('.mkv','.mp4','.mov','.mpg','.avi','.mpeg'))
             self.files['nfo'] = self._GetFileType(self.path, '.nfo')
+            if globalNFOName is not None:
+                self.files['nfo'].append('%s\%s' % (self.path,globalNFOName))
             self.files['image'] = self._GetFileType(self.path, ('.jpg','.jpeg','.png','.tbn'))
     
             #=======================================================================
@@ -319,7 +324,7 @@ class tmdb():
             self.urls['images'] = self._GetImageURL() + 'original'
         except Exception as e:
             self.log.error(unicode(e))
-            raise Exception("Failed to create Request Object")
+            raise
 
     def SearchMovie(self,string):
         url = self.host + self.urls['search'] % self.apikey + self._CreateQuery(string)

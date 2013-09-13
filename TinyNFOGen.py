@@ -180,7 +180,7 @@ if __name__ == '__main__':
             # Create the Movie Object
             #===================================================================
             try:
-                movie = Movie(os.path.join(rootPath,item),args.language,config.get('TMDB', 'apikey'))
+                movie = Movie(os.path.join(rootPath,item),args.language,config.get('TMDB', 'apikey'),args.globalNFOName)
             except Exception:
                 continue
             
