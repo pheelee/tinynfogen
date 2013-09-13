@@ -164,7 +164,7 @@ class Comparer(object):
     
     def addFile(self,path):
         m = Movie(path)
-        mfile = os.path.join(path,m._GetMovieFile())
+        mfile = os.path.join(path,m.GetMovieFile())
         self.item[path] = {}
         self.item[path]['resolution'] = self._getResolution(mfile)
         self.item[path]['size'] = self._getSize(mfile)

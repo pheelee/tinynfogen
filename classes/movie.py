@@ -108,7 +108,12 @@ class Movie(object):
         if self.infos['backdrop_path'] is not None:
             self._downloadImage(self.tmdb.urls['images'] + self.infos['backdrop_path'], 'fanart.jpg')
   
-
+    def _GetMovieFile(self):
+        files = self._GetFileType(self.path, ('.mkv','.mp4','.mov','.mpg','.avi','.mpeg'))
+        if len(files) == 1:
+            return files[0]
+        else:
+            return False
      
     def clean(self,extensions):
         for i in os.listdir(self.path):
