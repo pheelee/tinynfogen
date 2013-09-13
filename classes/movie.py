@@ -71,7 +71,7 @@ class Movie(object):
             #=======================================================================
             # Get Paths for all Items in current movie
             #=======================================================================
-            self.files['video'] = self._GetFileType(self.path, ('.mkv','.mp4','.mov','.mpg','.avi','.mpeg'))
+            self.files['video'] = self._GetFileType(self.path, ('.mkv','.mp4','.mov','.mpg','.avi','.mpeg'),100) #For Movies we want a minimum filesize of 100 MB, otherwise we assume it is a sample
             self.files['nfo'] = self._GetFileType(self.path, '.nfo')
             if globalNFOName is not None:
                 self.files['nfo'].append(self.path + os.sep + globalNFOName)
@@ -96,8 +96,7 @@ class Movie(object):
                 self._GetDetailedMovieInfos(language)
 
         except Exception as e:
-            self.log.error("%s: %s" % (self.Name + ' ' + self.Year,e))
-            raise Exception("Failed to create movie object")
+            raise
 
     
     def GetImages(self):
@@ -205,19 +204,24 @@ class Movie(object):
                 current = self.files[key][index]
                 self.files[key][index] = current.replace(old,new)
     
-    def _GetFileType(self,path,fileext):
+    def _GetFileType(self,path,fileext,minSize=None):
         rfile = []
         for root,dirs,files in os.walk(path):
             for item in files:
                 if os.path.splitext(item)[1] in fileext:
-                    rfile.append(os.path.join(root,item))
+                    if minSize is not None:
+                        if os.path.getsize(item) / 1024 / 1024 > minSize:
+                            rfile.append(os.path.join(root,item))
+                    else:
+                        rfile.append(os.path.join(root,item))
         return rfile
          
     def _SearchIDbyNFO(self):
         for item in self.files['nfo']:
-            getid = NFO(item,None).GetIMDBID()
-            if  getid != False:
-                return getid
+            if(os.path.isfile(item)):
+                getid = NFO(item,None).GetIMDBID()
+                if  getid != False:
+                    return getid
         return False
       
     def _downloadImage(self,url,filename):

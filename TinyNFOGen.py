@@ -181,7 +181,8 @@ if __name__ == '__main__':
             #===================================================================
             try:
                 movie = Movie(os.path.join(rootPath,item),args.language,config.get('TMDB', 'apikey'),args.globalNFOName)
-            except Exception:
+            except Exception as e:
+                log.error(str(e))
                 continue
             
             #===================================================================
@@ -201,7 +202,7 @@ if __name__ == '__main__':
             #===================================================================
             # Remove unwanted files from directory
             #===================================================================
-            movie.clean(('srf','sub','srr','sfv','sft','jpg','tbn','idx','nfo'))
+            movie.clean(('srf','sub','srr','sfv','sft','jpg','tbn','idx','nfo','html','url'))
             log.debug('Cleaned files: %s' % (movie.Name + movie.Year))
             
             #===================================================================
