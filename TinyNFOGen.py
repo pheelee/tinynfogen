@@ -37,6 +37,7 @@ from classes.mover import Mover
 from classes.log import TNGLog
 from tools.xbmc import XBMCJSON
 from tools.pwobfuscator import obfuscator
+from tools.git import LocalRepository
 
 
 #===========================================================================
@@ -117,6 +118,7 @@ if __name__ == '__main__':
     #===========================================================================
     # Init Classes
     #===========================================================================
+    git = LocalRepository(os.getcwd(), 'git')
     myobfuscate = obfuscator(5)
     config = ConfigParser.ConfigParser() 
     rootPath = args.rootFolder
@@ -157,8 +159,20 @@ if __name__ == '__main__':
         opener = urllib2.build_opener(httpproxy)
         urllib2.install_opener(opener)
     
-      
-        
+    
+    #===========================================================================
+    # Check for git update
+    #===========================================================================
+    git.fetch()
+    current_branch = git.getCurrentBranch().name
+    for branch in git.getRemoteByName('origin').getBranches():
+        local = git.getHead()
+        remote = branch.getHead()
+        if local.hash[:8] != remote.hash[:8]:
+            log.info('New Version available: %s' % remote.hash[:8])
+            log.info('Performing Self-Update')
+            git.pull()
+    
     #===========================================================================
     # #Add a Signal Handler for Ctrl + C
     #===========================================================================
