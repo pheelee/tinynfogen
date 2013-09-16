@@ -36,6 +36,7 @@ from classes.nfo import NFO
 from classes.mover import Mover
 from classes.log import TNGLog
 from tools.xbmc import XBMCJSON
+from tools.pwobfuscator import obfuscator
 
 
 #===========================================================================
@@ -116,6 +117,7 @@ if __name__ == '__main__':
     #===========================================================================
     # Init Classes
     #===========================================================================
+    myobfuscate = obfuscator(5)
     config = ConfigParser.ConfigParser() 
     rootPath = args.rootFolder
     log.info('Source Path: %s' % rootPath)
@@ -151,7 +153,7 @@ if __name__ == '__main__':
     
     if useProxy == 'True':
         log.info('Using Proxy')
-        httpproxy = urllib2.ProxyHandler({'http':config.get('Network', 'proxy')})
+        httpproxy = urllib2.ProxyHandler({'http':myobfuscate.deobfuscate(config.get('Network', 'proxy'))})
         opener = urllib2.build_opener(httpproxy)
         urllib2.install_opener(opener)
     
@@ -232,7 +234,7 @@ if __name__ == '__main__':
         hostname = config.get('XBMC', 'hostname')
         port = config.get('XBMC', 'port')
         username = config.get('XBMC', 'username')
-        password = config.get('XBMC', 'password')
+        password = myobfuscate.deobfuscate(config.get('XBMC', 'password'))
         
     
         http_address = 'http://%s:%s/jsonrpc' % (hostname, port)
