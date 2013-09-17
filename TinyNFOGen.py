@@ -168,10 +168,11 @@ if __name__ == '__main__':
     for branch in git.getRemoteByName('origin').getBranches():
         local = git.getHead()
         remote = branch.getHead()
-        if local.hash[:8] != remote.hash[:8]:
-            log.info('New Version available: %s' % remote.hash[:8])
-            log.info('Performing Self-Update')
-            git.pull()
+        if current_branch == branch.name:
+            if local.hash[:8] != remote.hash[:8]:
+                log.info('New Version available: %s' % remote.hash[:8])
+                log.info('Performing Self-Update')
+                git.pull()
     
     #===========================================================================
     # #Add a Signal Handler for Ctrl + C
