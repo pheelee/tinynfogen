@@ -174,6 +174,16 @@ if __name__ == '__main__':
                 log.info('Performing Self-Update')
                 git.pull()
     
+    args = sys.argv[:]
+    log.info('Re-spawning %s' % ' '.join(args))
+
+    args.insert(0, sys.executable)
+    if sys.platform == 'win32':
+        args = ['"%s"' % arg for arg in args]
+
+    os.chdir(PROJECT_ROOT)
+    os.execv(sys.executable, args)
+    
     #===========================================================================
     # #Add a Signal Handler for Ctrl + C
     #===========================================================================
