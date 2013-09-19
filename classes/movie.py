@@ -9,41 +9,14 @@ from nfo import NFO
 import urllib2
 import json
 from log import TNGLog
+from settings.words import scene_words as scene_words
 
 class Movie(object):
     
 
     _IgnoreFilePrefix= ('.','@')
     
-    _banned_words    = [
-                       'xvid',
-                       'dvdrip',
-                       'dvd-rip',
-                       'bluray',
-                       #'dl',
-                       'german',
-                       'br-rip',
-                       'ac3',
-                       '1080p',
-                       '720p',
-                       '-rwp',
-                       'fsk18',
-                       '-defused',
-                       'defused',
-                       'x264',
-                       'complete', 
-                       'bdrip',
-                       'brrip',
-                       'internal',
-                       '-exps',
-                       '-qrc',
-                       '-sons',
-                       '-ephemerid',
-                       '-poe',
-                       '-icq4711',
-                       '-qom',
-                       '-havefun'
-                       ]
+
 
     def __init__(self,
                  #Path to the Folder containing the Movie
@@ -116,13 +89,14 @@ class Movie(object):
      
     def clean(self,extensions):
         for i in os.listdir(self.path):
-            if os.path.isdir(os.path.join(self.path,i)):
-                shutil.rmtree(os.path.join(self.path,i))
+            itempath = os.path.join(self.path,i)
+            if os.path.isdir(itempath):
+                shutil.rmtree(itempath)
             if os.path.splitext(i)[1].lstrip('.') in extensions:
-                os.remove(os.path.join(self.path,i))
+                os.remove(itempath)
             #Remove Sample Files
             if 'sample' in i.lower():
-                os.remove(os.path.join(self.path,i))
+                os.remove(itempath)
     
     def rename(self,force):
         
@@ -211,12 +185,13 @@ class Movie(object):
         rfile = []
         for root,dirs,files in os.walk(path):
             for item in files:
+                itempath = os.path.join(root,item)
                 if os.path.splitext(item)[1] in fileext:
                     if minSize is not None:
-                        if os.path.getsize(os.path.join(root,item)) / 1024 / 1024 > minSize:
-                            rfile.append(os.path.join(root,item))
+                        if os.path.getsize(itempath) / 1024 / 1024 > minSize:
+                            rfile.append(itempath)
                     else:
-                        rfile.append(os.path.join(root,item))
+                        rfile.append(itempath)
         return rfile
          
     def _SearchIDbyNFO(self):
@@ -283,7 +258,7 @@ class Movie(object):
         string = string.replace('.',' ')
         
         #Filter out the banned scene words
-        for item in self._banned_words:
+        for item in scene_words:
             string = re.sub('('+item+')', '', string,flags=re.IGNORECASE)
             
         #merge multiple blanks into one
