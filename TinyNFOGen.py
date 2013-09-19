@@ -268,9 +268,9 @@ if __name__ == '__main__':
         xbmc = XBMCJSON(http_address,username,password)
         try:
             result = xbmc.VideoLibrary.Scan()
-        except:
+        except Exception as e:
             result = 'failed'
-        log.info('Updating XBMC Library: %s' % result)
+        log.info('Updating XBMC Library: %s' % str(e))
     
     #===========================================================================
     # End Secion / Cleanup
