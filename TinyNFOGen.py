@@ -11,6 +11,7 @@ Search URL: http://api.themoviedb.org/3/search/movie?api_key=xxx&query=after+the
 Detail URL: http://api.themoviedb.org/3/movie/10589?api_key=xxx&language=de
 
 
+
 '''
 import os,sys,signal
 
@@ -174,15 +175,15 @@ if __name__ == '__main__':
                 log.info('Performing Self-Update')
                 git.pull()
     
-    args = sys.argv[:]
-    log.info('Re-spawning %s' % ' '.join(args))
+                args = sys.argv[:]
+                log.info('Re-spawning %s' % ' '.join(args))
 
-    args.insert(0, sys.executable)
-    if sys.platform == 'win32':
-        args = ['"%s"' % arg for arg in args]
+                args.insert(0, sys.executable)
+                if sys.platform == 'win32':
+                    args = ['"%s"' % arg for arg in args]
 
-    os.chdir(PROJECT_ROOT)
-    os.execv(sys.executable, args)
+                os.chdir(PROJECT_ROOT)
+                os.execv(sys.executable, args)
     
     #===========================================================================
     # #Add a Signal Handler for Ctrl + C
