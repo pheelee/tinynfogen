@@ -314,6 +314,7 @@ class tmdb():
             raise
 
     def SearchMovie(self,string):
+        self.log.debug('Search String:%s' % string)
         url = self.host + self.urls['search'] % self.apikey + self._CreateQuery(string)
         request = urllib2.Request(url, headers=self.headers)
         resp = urllib2.urlopen(request)
