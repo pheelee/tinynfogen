@@ -119,7 +119,7 @@ if __name__ == '__main__':
     # Init Classes
     #===========================================================================
     git = LocalRepository(os.getcwd(), 'git')
-    myobfuscate = obfuscator(5)
+    myobfuscate = obfuscator(3)
     config = ConfigParser.ConfigParser() 
     rootPath = args.rootFolder
     log.info('Source Path: %s' % rootPath)
