@@ -264,12 +264,12 @@ if __name__ == '__main__':
         
     
         http_address = 'http://%s:%s/jsonrpc' % (hostname, port)
-    
+
         xbmc = XBMCJSON(http_address,username,password)
         try:
             result = xbmc.VideoLibrary.Scan()
-        except:
-            result = 'failed'
+        except Exception as e:
+            result = str(e)
         log.info('Updating XBMC Library: %s' % result)
     
     #===========================================================================
