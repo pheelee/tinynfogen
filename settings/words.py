@@ -31,5 +31,16 @@ scene_words    = [
                    '-poe',
                    '-icq4711',
                    '-qom',
-                   '-havefun'
+                   '-havefun',
+                   'hdrip',
+                   '-fun',
+                   'par2',
+                   'remastered',
+                   'mkv',
+                   'ame',
+                   'mstr',
+                   #'by',
+                   'dts',
+                   'hd'
+                   
                    ]
