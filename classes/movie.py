@@ -9,7 +9,6 @@ from nfo import NFO
 import urllib2
 import json
 from log import TNGLog
-from settings.words import scene_words as scene_words
 
 class Movie(object):
     
@@ -68,7 +67,7 @@ class Movie(object):
                 #===================================================================
                 self._GetDetailedMovieInfos(language)
 
-        except Exception as e:
+        except Exception:
             raise
 
     
@@ -254,19 +253,25 @@ class Movie(object):
         if ', The' in string:
             string = 'The %s' % string.replace(', The','')
             
-        string = string.strip('[').strip(']')
-        string = string.replace('.',' ')
-        
+                
         #Filter out the banned scene words
-        for item in scene_words:
-            string = re.sub('('+item+')', '', string,flags=re.IGNORECASE)
-            
-        #merge multiple blanks into one
-        string = re.sub(' +',' ',string)
+        scene_words = open('../settings/scene_words.txt').read().replace(' ','').strip(os.linesep) #dirty code change later
+        
+        string = self._sanitizeReleaseName(string,'.',scene_words)
+        
         #Remove the year from movie title
         string = re.sub('(\\(\d{4}\\))', '', string)
         return string.strip()
 
+        def _sanitizeReleaseName(string,delimiter,words):
+            output = []
+            sstring = string.split(delimiter)
+            for item in sstring:
+                if not item.lower() in words:
+                    output.append(item)
+                    
+            return ' '.join(output)
+        
 
     def _MakeSMBfriendly(self,string):    
         restricted_chars = [ '\\' , '/' , ':' , '*' , '?' , '\"' , '<' , '>' , '|', '\'' ]
