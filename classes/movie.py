@@ -255,7 +255,7 @@ class Movie(object):
             
                 
         #Filter out the banned scene words
-        scene_words = open('../settings/scene_words.txt').read().replace(' ','').strip(os.linesep) #dirty code change later
+        scene_words = open('settings/scene_words.txt').read().replace(' ','').strip(os.linesep) #dirty code change later
         
         string = self._sanitizeReleaseName(string,'.',scene_words)
         
@@ -263,14 +263,14 @@ class Movie(object):
         string = re.sub('(\\(\d{4}\\))', '', string)
         return string.strip()
 
-        def _sanitizeReleaseName(string,delimiter,words):
-            output = []
-            sstring = string.split(delimiter)
-            for item in sstring:
-                if not item.lower() in words:
-                    output.append(item)
+    def _sanitizeReleaseName(self,string,delimiter,words):
+        output = []
+        sstring = string.split(delimiter)
+        for item in sstring:
+            if not item.lower() in words:
+                output.append(item)
                     
-            return ' '.join(output)
+        return ' '.join(output)
         
 
     def _MakeSMBfriendly(self,string):    
