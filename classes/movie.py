@@ -267,7 +267,7 @@ class Movie(object):
     def _sanitizeReleaseName(self,string,words):
         output = []
         arrMovTitle = string.split('.')
-        if len(arrMovTitle) < 2:
+        if len(arrMovTitle) < 4:
             arrMovTitle = string.split(' ')
         for item in arrMovTitle:
             if not item.lower() in words:
