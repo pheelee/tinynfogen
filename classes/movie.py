@@ -218,7 +218,7 @@ class Movie(object):
             _id = self._SearchIDbyNFO()
         #Query the TMDB
         if _id == False:
-            self.tmdb.SearchMovie(self.Name + ' ' + self.Year)
+            self.tmdb.SearchMovie(self.Name)
             if self.tmdb.searchResult['total_results'] == 0:
                 raise Exception('No Search Results')  
             elif self.tmdb.searchResult['total_results'] == 1:
