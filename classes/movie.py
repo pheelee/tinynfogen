@@ -261,6 +261,7 @@ class Movie(object):
         
         #Remove the year from movie title
         string = re.sub('(\\(\d{4}\\))', '', string)
+        string = re.sub('\d{4}',string)
         return string.strip()
 
     def _sanitizeReleaseName(self,string,delimiter,words):
