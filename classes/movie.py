@@ -91,10 +91,10 @@ class Movie(object):
             itempath = os.path.join(self.path,i)
             if os.path.isdir(itempath):
                 shutil.rmtree(itempath)
-            if os.path.splitext(i)[1].lstrip('.') in extensions:
+            elif os.path.splitext(i)[1].lstrip('.') in extensions:
                 os.remove(itempath)
             #Remove Sample Files
-            if 'sample' in i.lower():
+            elif 'sample' in i.lower():
                 os.remove(itempath)
     
     def rename(self,force):
