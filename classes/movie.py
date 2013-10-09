@@ -257,17 +257,19 @@ class Movie(object):
         #Filter out the banned scene words
         scene_words = open('settings/scene_words.txt').read().replace(' ','').strip(os.linesep) #dirty code change later
         
-        string = self._sanitizeReleaseName(string,'.',scene_words)
+        string = self._sanitizeReleaseName(string,scene_words)
         
         #Remove the year from movie title
         string = re.sub('(\\(\d{4}\\))', '', string)
         string = re.sub('\d{4}','',string)
         return string.strip()
 
-    def _sanitizeReleaseName(self,string,delimiter,words):
+    def _sanitizeReleaseName(self,string,words):
         output = []
-        sstring = string.split(delimiter)
-        for item in sstring:
+        arrMovTitle = string.split('.')
+        if len(arrMovTitle) < 2:
+            arrMovTitle = string.split(' ')
+        for item in arrMovTitle:
             if not item.lower() in words:
                 output.append(item)
                     
