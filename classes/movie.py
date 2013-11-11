@@ -126,7 +126,7 @@ class Movie(object):
                 newPath = newPath.encode('utf-8')
                 os.rename(self.path, newPath)
             except OSError as e:
-                raise
+                raise Exception("cannot rename folder %s:%s" % (newPath,e))
             #Convert newPath back to unicode and pass to self.path
             self._update_files_path(self.path, newPath.decode('utf-8'))
             self.path = newPath.decode('utf-8')
