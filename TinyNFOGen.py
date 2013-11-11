@@ -204,20 +204,20 @@ if __name__ == '__main__':
             
             log.debug("Processing: %s" % item)
             
-            #===================================================================
-            # Create the Movie Object
-            #===================================================================
+
             try:
+                #===================================================================
+                # Create the Movie Object
+                #===================================================================
                 movie = Movie(os.path.join(rootPath,item),args.language,config.get('TMDB', 'apikey'),args.globalNFOName)
+                #===================================================================
+                # Rename the Folder and Files
+                #===================================================================
+                movie.rename(args.forceRename)
+                
             except Exception as e:
                 log.error(str(e))
                 continue
-            
-            #===================================================================
-            # Rename the Folder and Files
-            #===================================================================
-            movie.rename(args.forceRename)
-
 
             #===================================================================
             # Prepare NFO name and check if already created by tinynfogen
