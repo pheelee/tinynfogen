@@ -162,7 +162,7 @@ class Movie(object):
         
         for index,value in enumerate(self._newFiles['video']):
             os.rename(self.files['video'][index], self._newFiles['video'][index].encode('utf-8'))
-            self.log.info('moved: %s' % value)
+            self.log.info('renamed video file: %s' % value)
     
   
     def _GetDetailedMovieInfos(self, language):
