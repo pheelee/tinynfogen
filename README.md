@@ -21,7 +21,3 @@ tinynfogen
       -l LANGUAGE       Language of Movie Infos in ISO 639-1 code
                         Default:German(de)
 
-ToDo
---------
-- Auto delete option if destination contains better quality
-- first time run uses an assistant to generate a config file
