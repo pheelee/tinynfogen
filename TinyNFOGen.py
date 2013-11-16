@@ -36,6 +36,7 @@ from classes.movie import Movie
 from classes.nfo import NFO
 from classes.mover import Mover
 from classes.log import TNGLog
+from classes.installer import Config, Updater
 from tools.xbmc import XBMCJSON
 from tools.pwobfuscator import obfuscator
 from tools.git import LocalRepository
@@ -78,6 +79,7 @@ if __name__ == '__main__':
     parser = ArgumentParser(description='Generate NFO Files')
     parser.add_argument('--src',dest='rootFolder',type=unicode,required=True,help='The root folder where the movies are')
     parser.add_argument('--dst',dest='destFolder',type=unicode,required=False,help='The folder where the movies should be put to after processing')
+    parser.add_argument('--create-config',dest='createConfig',action='store_true',help='Create a new config file')
     parser.add_argument('-f',dest='forceRename',action='store_true',help='Forces Folder and File renaming for all items')
     parser.add_argument('-o',dest='forceOverwrite',action='store_true',help='Forces overwriting of existing movies in destination')
     parser.add_argument('-updateXBMC',dest='forceXBMCUpdate',action='store_true',help='Forces update of XBMC Library (regardless of config setting)')
@@ -114,14 +116,25 @@ if __name__ == '__main__':
     
     log.logger.setLevel(logging.DEBUG)
 
+
     
+    #===========================================================================
+    # Read Config Settings
+    #===========================================================================
     
+    myconf = Config(ConfigFile)
+    
+    if myconf.isAvailable() == False or args.createConfig:
+        myconf.create()
+    
+    config = ConfigParser.ConfigParser()    
+    config.read(ConfigFile)
+
+
     #===========================================================================
     # Init Classes
     #===========================================================================
-    git = LocalRepository(os.getcwd(), 'git')
     myobfuscate = obfuscator(3)
-    config = ConfigParser.ConfigParser() 
     rootPath = args.rootFolder
     log.info('Source Path: %s' % rootPath)
     if args.destFolder:
@@ -129,22 +142,7 @@ if __name__ == '__main__':
         log.info('Destination Path: %s' % args.destFolder)
     else:
         mover = False
-    
-    #===========================================================================
-    # Read Config Settings
-    #===========================================================================
-    
-    if os.path.isfile(ConfigFile):
-        config.read(ConfigFile)
-        useProxy = config.get('Network', 'useProxy')
-    else:
-        log.error('No config file found!!')
-        sys.exit(1)
-    
-
-    
-
-    
+ 
     #===========================================================================
     # Initialisation
     #===========================================================================
@@ -154,7 +152,7 @@ if __name__ == '__main__':
     log.info('Script started')
     log.debug('Debug Mode On')
     
-    if useProxy == 'True':
+    if config.get("Network","useProxy") == 'True':
         log.info('Using Proxy')
         httpproxy = urllib2.ProxyHandler({'http':myobfuscate.deobfuscate(config.get('Network', 'proxy'))})
         opener = urllib2.build_opener(httpproxy)
@@ -164,26 +162,28 @@ if __name__ == '__main__':
     #===========================================================================
     # Check for git update
     #===========================================================================
-    git.fetch()
-    current_branch = git.getCurrentBranch().name
-    for branch in git.getRemoteByName('origin').getBranches():
-        local = git.getHead()
-        remote = branch.getHead()
-        if current_branch == branch.name:
-            if local.hash[:8] != remote.hash[:8]:
-                log.info('New Version available: %s' % remote.hash[:8])
-                log.info('Performing Self-Update')
-                git.pull()
+    if config.get('AutoUpdate','enabled') == 'true':
+        git = LocalRepository(os.getcwd(), config.get('AutoUpdate', 'git'))
+        git.fetch()
+        current_branch = git.getCurrentBranch().name
+        for branch in git.getRemoteByName('origin').getBranches():
+            local = git.getHead()
+            remote = branch.getHead()
+            if current_branch == branch.name:
+                if local.hash[:8] != remote.hash[:8]:
+                    log.info('New Version available: %s' % remote.hash[:8])
+                    log.info('Performing Self-Update')
+                    git.pull()
+        
+                    args = sys.argv[:]
+                    log.info('Re-spawning %s' % ' '.join(args))
     
-                args = sys.argv[:]
-                log.info('Re-spawning %s' % ' '.join(args))
-
-                args.insert(0, sys.executable)
-                if sys.platform == 'win32':
-                    args = ['"%s"' % arg for arg in args]
-
-                os.chdir(PROJECT_ROOT)
-                os.execv(sys.executable, args)
+                    args.insert(0, sys.executable)
+                    if sys.platform == 'win32':
+                        args = ['"%s"' % arg for arg in args]
+    
+                    os.chdir(PROJECT_ROOT)
+                    os.execv(sys.executable, args)
     
     #===========================================================================
     # #Add a Signal Handler for Ctrl + C
