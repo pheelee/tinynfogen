@@ -6,7 +6,7 @@ Created on 16.11.2013
 
 import os,sys
 import ConfigParser
-from mhlib import updateline
+
 
 class Updater(object):
     
