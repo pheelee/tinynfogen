@@ -267,7 +267,7 @@ if __name__ == '__main__':
         
                 xbmc = XBMCJSON(http_address,username,password)
                 try:
-                    result = xbmc.VideoLibrary.Scan("directory:%s" % dst)
+                    result = xbmc.VideoLibrary.Scan({"directory":dst})
                 except Exception as e:
                     result = str(e)
                 log.info('Updating XBMC Library: %s' % result)
