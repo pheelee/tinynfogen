@@ -88,7 +88,8 @@ class Mover(object):
         else:
             shutil.move(src, dst)
             self.log.info('Movie moved : %s' % dst)
-    
+            
+        return dst
     
     
     def _ContainsGroupFolders(self,path):

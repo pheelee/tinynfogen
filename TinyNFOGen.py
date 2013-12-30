@@ -249,28 +249,28 @@ if __name__ == '__main__':
             # Move the Movie
             #===================================================================
             if not mover == False:
-                mover.move(movie.path,args.forceOverwrite)
+                dst = mover.move(movie.path,args.forceOverwrite)
                         
                         
-    #===========================================================================
-    # Update the XBMC Library
-    #===========================================================================
-    if config.get('XBMC', 'updateLibrary') == 'True' or args.forceXBMCUpdate == True:
+            #===========================================================================
+            # Update the XBMC Library
+            #===========================================================================
+            if config.get('XBMC', 'updateLibrary') == 'True' or args.forceXBMCUpdate == True:
+                
+                hostname = config.get('XBMC', 'hostname')
+                port = config.get('XBMC', 'port')
+                username = config.get('XBMC', 'username')
+                password = myobfuscate.deobfuscate(config.get('XBMC', 'password'))
+                
+            
+                http_address = 'http://%s:%s/jsonrpc' % (hostname, port)
         
-        hostname = config.get('XBMC', 'hostname')
-        port = config.get('XBMC', 'port')
-        username = config.get('XBMC', 'username')
-        password = myobfuscate.deobfuscate(config.get('XBMC', 'password'))
-        
-    
-        http_address = 'http://%s:%s/jsonrpc' % (hostname, port)
-
-        xbmc = XBMCJSON(http_address,username,password)
-        try:
-            result = xbmc.VideoLibrary.Scan()
-        except Exception as e:
-            result = str(e)
-        log.info('Updating XBMC Library: %s' % result)
+                xbmc = XBMCJSON(http_address,username,password)
+                try:
+                    result = xbmc.VideoLibrary.Scan("directory:%s" % dst)
+                except Exception as e:
+                    result = str(e)
+                log.info('Updating XBMC Library: %s' % result)
     
     #===========================================================================
     # End Secion / Cleanup
