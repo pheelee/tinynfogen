@@ -185,7 +185,7 @@ class Movie(object):
         for root,dirs,files in os.walk(path):
             for item in files:
                 itempath = os.path.join(root,item)
-                if os.path.splitext(item)[1] in fileext:
+                if os.path.splitext(item)[1].lower() in fileext:
                     if minSize is not None:
                         if os.path.getsize(itempath) / 1024 / 1024 > minSize:
                             rfile.append(itempath)

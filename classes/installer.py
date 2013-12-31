@@ -48,32 +48,41 @@ class Config(object):
         
 
 
-        #XBMC Section
+        #=======================================================================
+        # XBMC Section
+        #=======================================================================
         if useXBMC.lower() == "yes":
             updateLibrary = "True"
             xbmcHostname = self._getUserInput("XBMC Hostname or IP Address")
             xbmcPort = self._getUserInput("XBMC Port")
             xbmcUsername = self._getUserInput("XBMC Username")
             xbmcPassword = self._getUserInput("XBMC Password")
+            libraryPath = self._getUserInput("XBMC Library Path (e.g. nfs://192.168.1.100)")
         else:
             updateLibrary = "False"
             xbmcHostname = ""
             xbmcPort = ""
             xbmcUsername = ""
             xbmcPassword = ""
+            libraryPath = ""
         cfg.add_section("XBMC")
         cfg.set("XBMC", "updateLibrary", updateLibrary)
         cfg.set("XBMC","hostname", xbmcHostname)
         cfg.set("XBMC","port", xbmcPort)
         cfg.set("XBMC","username",xbmcUsername)
         cfg.set("XBMC","password",xbmcPassword)
+        cfg.set("XBMC","libraryPath",libraryPath)
         
-        #TMDB Section
+        #=======================================================================
+        # TMDB Section
+        #=======================================================================
         cfg.add_section("TMDB")
         
         cfg.set("TMDB","apikey",apikey)
         
-        #Network Section
+        #=======================================================================
+        # Network Section
+        #=======================================================================
         cfg.add_section("Network")
         
         if httpproxy != '':
@@ -83,7 +92,9 @@ class Config(object):
             cfg.set("Network","useProxy","False")
             cfg.set("Network","proxy","")
         
-        #AutoUpdate Section
+        #=======================================================================
+        # AutoUpdate Section
+        #=======================================================================
         cfg.add_section("AutoUpdate")
         
         if autoupdate == "true":
@@ -95,7 +106,9 @@ class Config(object):
         cfg.set("AutoUpdate","git",gitbinary)
         
         
-        #Write the Config File
+        #=======================================================================
+        # Write the Config File
+        #=======================================================================
         with open(self.configfile,'w') as configuration:
             cfg.write(configuration)
         
