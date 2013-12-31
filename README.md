@@ -1,6 +1,7 @@
 tinynfogen
 ==========
 
+A generator for NFO Files used in xbmc
 
     usage: TinyNFOGen.py [-h] --src ROOTFOLDER [--dst DESTFOLDER] [-f] [-o]
                          [-updateXBMC] [-v] [-n GLOBALNFONAME] [-l LANGUAGE]
