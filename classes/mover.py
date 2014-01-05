@@ -48,10 +48,9 @@ class Mover(object):
         else:
             self._GetDstFolders(RootDestination)
 
-        
         self.log = TNGLog()
         
-    def move(self,src,overwrite):
+    def move(self,src,forceOverwrite):
         if self._dstFolders.has_key('root'):
             dst = os.path.join(self._dstFolders['root'],os.path.basename(src))
         else:
@@ -78,18 +77,20 @@ class Mover(object):
                 else:
                     overwrite = False
                 
-            if overwrite == True:
+            if overwrite or forceOverwrite:
                 self.log.info('Overwriting existing Movie : %s' % dst)
                 shutil.rmtree(dst)
                 shutil.move(src, dst)
-            elif overwrite == False:
+            else:
                 self.log.warning('Existing Movie has same or better quality, ignoring it : %s' % os.path.basename(dst))
+                return False
                 
         else:
             shutil.move(src, dst)
             self.log.info('Movie moved : %s' % dst)
-            
-        return dst
+        
+        self.dst = dst
+        return True
     
     
     def _ContainsGroupFolders(self,path):

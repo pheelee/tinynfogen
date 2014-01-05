@@ -137,11 +137,10 @@ if __name__ == '__main__':
     myobfuscate = obfuscator(3)
     rootPath = args.rootFolder
     log.info('Source Path: %s' % rootPath)
+    mover = None
     if args.destFolder:
         mover = Mover(args.destFolder)
         log.info('Destination Path: %s' % args.destFolder)
-    else:
-        mover = False
  
     #===========================================================================
     # Initialisation
@@ -248,30 +247,30 @@ if __name__ == '__main__':
             #===================================================================
             # Move the Movie
             #===================================================================
-            if not mover == False:
-                dst = mover.move(movie.path,args.forceOverwrite)
+            if mover:
+                if mover.move(movie.path,args.forceOverwrite):
                         
                         
-            #===========================================================================
-            # Update the XBMC Library
-            #===========================================================================
-            if config.get('XBMC', 'updateLibrary') == 'True' or args.forceXBMCUpdate == True:
+                    #===========================================================================
+                    # Update the XBMC Library
+                    #===========================================================================
+                    if config.get('XBMC', 'updateLibrary') == 'True' or args.forceXBMCUpdate == True:
+                        
+                        hostname = config.get('XBMC', 'hostname')
+                        port = config.get('XBMC', 'port')
+                        username = config.get('XBMC', 'username')
+                        password = myobfuscate.deobfuscate(config.get('XBMC', 'password'))
+                        libraryPath = config.get('XBMC','libraryPath')
+                    
+                        http_address = 'http://%s:%s/jsonrpc' % (hostname, port)
                 
-                hostname = config.get('XBMC', 'hostname')
-                port = config.get('XBMC', 'port')
-                username = config.get('XBMC', 'username')
-                password = myobfuscate.deobfuscate(config.get('XBMC', 'password'))
-                libraryPath = config.get('XBMC','libraryPath')
-            
-                http_address = 'http://%s:%s/jsonrpc' % (hostname, port)
-        
-                xbmc = XBMCJSON(http_address,username,password)
-                try:
-                    dst = libraryPath + dst
-                    result = xbmc.VideoLibrary.Scan(**{"directory":dst})
-                except Exception as e:
-                    result = str(e)
-                log.info('Updating XBMC Library: %s' % result)
+                        xbmc = XBMCJSON(http_address,username,password)
+                        try:
+                            dst = libraryPath + mover.dst
+                            result = xbmc.VideoLibrary.Scan(**{"directory":dst})
+                        except Exception as e:
+                            result = str(e)
+                        log.info('Updating XBMC Library: %s' % result)
     
     #===========================================================================
     # End Secion / Cleanup
