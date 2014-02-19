@@ -229,7 +229,7 @@ if __name__ == '__main__':
             #===================================================================
             # Remove unwanted files from directory
             #===================================================================
-            movie.clean(('srf','sub','srr','sfv','sft','jpg','tbn','idx','nfo','html','url'))
+            movie.clean(('srf','sub','srr','sfv','sft','jpg','tbn','idx','nfo','html','url','par2','rar'))
             log.debug('Cleaned files: %s' % (movie.Name + movie.Year))
             
             #===================================================================
