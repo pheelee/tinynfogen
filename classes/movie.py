@@ -1,14 +1,15 @@
-'''
+"""
 Created on 29.03.2013
 
-@author: ritterph
-'''
+@author: pri@irbe.ch
+"""
 
 import os, re, shutil
 from nfo import NFO
 import urllib2
 import json
 from log import TNGLog
+
 
 class Movie(object):
     
@@ -29,9 +30,9 @@ class Movie(object):
                  ):
 
         self.files = {}
-        self._newFiles = {}
-        self._newFiles['video'] = []
-        self._newFiles['nfo'] = []
+        self.newFiles = {}
+        self.newFiles['video'] = []
+        self.newFiles['nfo'] = []
         self.infos = u''
         self.NFO = u''
         self.nfoname = u''
@@ -143,16 +144,16 @@ class Movie(object):
         nameprefix = self._MakeSMBfriendly(self.infos['title'] + ' ' + self.Year)
         
         if len(self.files['video']) > 1:
-            self._newFiles['nfo'].insert(0,os.path.join(self.path,'movie.nfo'))
+            self.newFiles['nfo'].insert(0,os.path.join(self.path,'movie.nfo'))
             for index,video in enumerate(self.files['video']):
                 if re.search('cd[1-9]', video.lower()):
                     
                     _moviename = nameprefix + ' ' + re.findall('cd[1-9]',video.lower())[0]
                     _extension = os.path.splitext(self.files['video'][index])[1]
-                    self._newFiles['video'].insert(index,os.path.join(self.path,_moviename +_extension))
+                    self.newFiles['video'].insert(index,os.path.join(self.path,_moviename +_extension))
         else:
-            self._newFiles['nfo'].insert(0,os.path.join(self.path,nameprefix + '.nfo'))
-            self._newFiles['video'].insert(0,os.path.join(self.path,nameprefix + os.path.splitext(self.files['video'][0])[1]))
+            self.newFiles['nfo'].insert(0,os.path.join(self.path,nameprefix + '.nfo'))
+            self.newFiles['video'].insert(0,os.path.join(self.path,nameprefix + os.path.splitext(self.files['video'][0])[1]))
             
 
     
@@ -160,8 +161,8 @@ class Movie(object):
         # Move/Rename the Files
         #=======================================================================
         
-        for index,value in enumerate(self._newFiles['video']):
-            os.rename(self.files['video'][index], self._newFiles['video'][index].encode('utf-8'))
+        for index,value in enumerate(self.newFiles['video']):
+            os.rename(self.files['video'][index], self.newFiles['video'][index].encode('utf-8'))
             self.log.info('renamed video file: %s' % value)
     
   
