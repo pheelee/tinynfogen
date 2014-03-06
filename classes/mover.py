@@ -48,10 +48,9 @@ class Mover(object):
         else:
             self._GetDstFolders(RootDestination)
 
-        
         self.log = TNGLog()
         
-    def move(self,src,overwrite):
+    def move(self,src,forceOverwrite):
         if self._dstFolders.has_key('root'):
             dst = os.path.join(self._dstFolders['root'],os.path.basename(src))
         else:
@@ -78,17 +77,20 @@ class Mover(object):
                 else:
                     overwrite = False
                 
-            if overwrite == True:
+            if overwrite or forceOverwrite:
                 self.log.info('Overwriting existing Movie : %s' % dst)
                 shutil.rmtree(dst)
                 shutil.move(src, dst)
-            elif overwrite == False:
+            else:
                 self.log.warning('Existing Movie has same or better quality, ignoring it : %s' % os.path.basename(dst))
+                return False
                 
         else:
             shutil.move(src, dst)
             self.log.info('Movie moved : %s' % dst)
-    
+        
+        self.dst = dst
+        return True
     
     
     def _ContainsGroupFolders(self,path):
@@ -108,7 +110,7 @@ class Mover(object):
         
         if self._is_number(_letter):
             _letter = 'A' #For now we put Movies beginning with a Number to Folder A-
-	elif _letter.isalnum() == False: #if we have a special char, we search for the first Alphabetic Char
+        elif _letter.isalnum() == False: #if we have a special char, we search for the first Alphabetic Char
             _letter = self._getFirstAlphaChar(os.path.basename(name))
 		
 		
@@ -164,7 +166,7 @@ class Comparer(object):
     
     def addFile(self,path):
         m = Movie(path)
-        mfile = os.path.join(path,m._GetMovieFile())
+        mfile = os.path.join(path,m.GetMovieFile())
         self.item[path] = {}
         self.item[path]['resolution'] = self._getResolution(mfile)
         self.item[path]['size'] = self._getSize(mfile)

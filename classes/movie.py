@@ -4,7 +4,7 @@ Created on 29.03.2013
 @author: ritterph
 '''
 
-import os,pprint, re
+import os, re, shutil
 from nfo import NFO
 import urllib2
 import json
@@ -13,115 +13,98 @@ from log import TNGLog
 class Movie(object):
     
 
-    _FileExts        = ['.mkv','.mp4','.mov','.mpg','.avi','.mpeg']
     _IgnoreFilePrefix= ('.','@')
     
-    _banned_words    = [
-                       'xvid',
-                       'dvdrip',
-                       'dvd-rip',
-                       'bluray',
-                       #'dl',
-                       'german',
-                       'br-rip',
-                       'ac3',
-                       '1080p',
-                       '720p',
-                       '-rwp',
-                       'fsk18',
-                       '-defused',
-                       'defused',
-                       'x264',
-                       'complete', 
-                       'bdrip',
-                       'brrip',
-                       'internal',
-                       '-exps',
-                       '-qrc',
-                       '-sons',
-                       '-ephemerid',
-                       '-poe',
-                       '-icq4711',
-                       '-qom',
-                       '-havefun'
-                       ]
 
-    def __init__(self,path):
 
+    def __init__(self,
+                 #Path to the Folder containing the Movie
+                 path,
+                 #Language for the Movie
+                 language = '',
+                 #ApiKey for TMDB
+                 apikey = '',
+                 #Global NFO Name
+                 globalNFOName = None
+                 ):
+
+        self.files = {}
+        self._newFiles = {}
+        self._newFiles['video'] = []
+        self._newFiles['nfo'] = []
         self.infos = u''
-        self.Request = u''
         self.NFO = u''
-        self.NFOPaths = []
         self.nfoname = u''
         self.path = path
         self.log = TNGLog()
         self.id = False
+        
+        try:
+            #=======================================================================
+            # Get Paths for all Items in current movie
+            #=======================================================================
+            self.files['video'] = self._GetFileType(self.path, ('.mkv','.mp4','.mov','.mpg','.avi','.mpeg'),100) #For Movies we want a minimum filesize of 100 MB, otherwise we assume it is a sample
+            self.files['nfo'] = self._GetFileType(self.path, '.nfo')
+            if globalNFOName is not None:
+                self.files['nfo'].append(self.path + os.sep + globalNFOName)
+            self.files['image'] = self._GetFileType(self.path, ('.jpg','.jpeg','.png','.tbn'))
+    
+            #=======================================================================
+            # Extract the Name of the Movie from the Folder
+            #=======================================================================
+            self.Name = self._GetNamefromFolder(os.path.basename(path))
+            self.Year = self._GetYear(os.path.basename(path))
+            
+            if len(apikey) > 0:
+                self.tmdb = tmdb(apikey)
+                #=======================================================================
+                # Get an IMDB ID
+                #=======================================================================
+                self.id = self._GetID()
+                
+                #===================================================================
+                # Get detailed Movie Information and store them in self.infos
+                #===================================================================
+                self._GetDetailedMovieInfos(language)
 
-        #Extract the Name of the Movie from the Folder
-        self.Name = self._GetNamefromFolder(os.path.basename(path))
-        self.Year = self._GetYear(os.path.basename(path))
-        
-        self.multiCDMovie = self._MultiCDMovie()
-        
-        #Call basic functions for Information Gathering about the movie
-        self.NFOPaths = self._GetNFOPaths()
-        
-        if self.multiCDMovie:
-            self.nfoname = 'movie.nfo' #if the movie consists of multiple CDs we simply name the file movie.nfo (suitable for multiple programs like boxee, xbmc etc.)
-        else:
-            m = self._GetMovieFile()
-            if not m:
-                raise Exception("No valid movie container found!")
-            else:
-                self.nfoname = m.replace(os.path.splitext(m)[1],'.nfo')
+        except Exception:
+            raise
+
     
     def GetImages(self):
         if self.infos['poster_path'] is not None:
-            self._downloadImage(self.Request.urls['images'] + self.infos['poster_path'],'movie.tbn')
-            self._downloadImage(self.Request.urls['images'] + self.infos['poster_path'],'poster.jpg')
-            self._downloadImage(self.Request.urls['images'] + self.infos['poster_path'],os.path.basename(self.path)+'.tbn')
+            self._downloadImage(self.tmdb.urls['images'] + self.infos['poster_path'],'movie.tbn')
+            self._downloadImage(self.tmdb.urls['images'] + self.infos['poster_path'],'poster.jpg')
+            self._downloadImage(self.tmdb.urls['images'] + self.infos['poster_path'],os.path.basename(self.path)+'.tbn')
         if self.infos['backdrop_path'] is not None:
-            self._downloadImage(self.Request.urls['images'] + self.infos['backdrop_path'], 'fanart.jpg')
+            self._downloadImage(self.tmdb.urls['images'] + self.infos['backdrop_path'], 'fanart.jpg')
   
-    def GetID(self):
-        #First try to get ID from Foldername
-        _id = self._GetIDFromFolder()
-        if _id == False:
-        #Search the NFO Files for ID
-            _id = self._SearchIDbyNFO()
-        #Query the TMDB
-        if _id == False:
-            self.Request.SearchMovie(self.Name + ' ' + self.Year)
-            if self.Request.searchResult['total_results'] == 0:
-                self.log.warning('No Search Results : %s' % (self.Name + ' ' + self.Year))  
-                self.id = False
-                return False
-            elif self.Request.searchResult['total_results'] == 1:
-                _id = self.Request.ParseID()
-            elif self.Request.searchResult['total_results'] > 1:
-                _id = self.SearchIDbyTitle()
-            else:
-                _id = False
-            
-        self.id = _id
-     
-    def GetDetailedMovieInfos(self, language):
-        _infos = self.Request.GetMovieDetails(self.id,language)
-        if len(_infos) > 0:
-            self.infos = json.loads(_infos)
-            self.Name = self.infos['title']
-            self.Year = '(%s)' % self.infos['release_date'][0:4]
+    def GetMovieFile(self):
+        files = self._GetFileType(self.path, ('.mkv','.mp4','.mov','.mpg','.avi','.mpeg'))
+        if len(files) == 1:
+            return files[0]
         else:
-            self.infos = False
+            return False
      
-    def CleanFiles(self,extensions):
+    def clean(self,extensions):
         for i in os.listdir(self.path):
-            if os.path.splitext(i)[1].lstrip('.') in extensions:
-                os.remove(os.path.join(self.path,i))
+            itempath = os.path.join(self.path,i)
+            if os.path.isdir(itempath):
+                shutil.rmtree(itempath)
+            elif os.path.splitext(i)[1].lstrip('.') in extensions:
+                os.remove(itempath)
+            #Remove Sample Files
+            elif 'sample' in i.lower():
+                os.remove(itempath)
     
-    def SearchIDbyTitle(self):
+    def rename(self,force):
+        
+        self._rename_folder(force)
+        self._rename_files(force)
+    
+    def _SearchIDbyTitle(self):
         found = False
-        for result in self.Request.searchResult['results']:
+        for result in self.tmdb.searchResult['results']:
             if result['original_title'] == self.Name:
                 found = result['id']
             elif result['title'] == self.Name:
@@ -129,10 +112,7 @@ class Movie(object):
                  
         return found
 
-    def HasTNGnfo(self):
-        return self.NFO.CheckElement(u'generated', u'422344cf76177667d7d3fded1e7538df')
-
-    def RenameFolder(self,force):
+    def _rename_folder(self,force):
            
         currentName = (os.path.basename(self.path))
         newName = self.infos['title'] + ' ' + self.Year
@@ -145,51 +125,80 @@ class Movie(object):
             try:
                 newPath = newPath.encode('utf-8')
                 os.rename(self.path, newPath)
-            except OSError:
-                pass
+            except OSError as e:
+                raise Exception("cannot rename folder %s:%s" % (newPath,e))
             #Convert newPath back to unicode and pass to self.path
+            self._update_files_path(self.path, newPath.decode('utf-8'))
             self.path = newPath.decode('utf-8')
             self.log.info("Movie renamed: %s" % newName)
-            
-    def RenameFiles(self,force):       
-        if self.multiCDMovie == True:
-            return 1
-        else:
-            for f in os.listdir(self.path):
-                if not f.startswith(self._IgnoreFilePrefix):
-                    f = self._force_decode(f)
-                    fullname = os.path.splitext(os.path.join(self.path,f))
-                    currentName =  self._force_decode(os.path.basename(fullname[0]))
-                    #currentName = os.path.basename(fullname[0])                
-
-                    newName = self.infos['title'] + ' ' + self.Year
+    
+    def _rename_files(self,force):
+        
+        
+        
+        #=======================================================================
+        # Build the new Paths
+        #=======================================================================
+        
+        nameprefix = self._MakeSMBfriendly(self.infos['title'] + ' ' + self.Year)
+        
+        if len(self.files['video']) > 1:
+            self._newFiles['nfo'].insert(0,os.path.join(self.path,'movie.nfo'))
+            for index,video in enumerate(self.files['video']):
+                if re.search('cd[1-9]', video.lower()):
                     
-                    if currentName != newName or force == True:
-                        newName = os.path.join(self.path,f.replace(currentName,self._MakeSMBfriendly(newName)))
+                    _moviename = nameprefix + ' ' + re.findall('cd[1-9]',video.lower())[0]
+                    _extension = os.path.splitext(self.files['video'][index])[1]
+                    self._newFiles['video'].insert(index,os.path.join(self.path,_moviename +_extension))
+        else:
+            self._newFiles['nfo'].insert(0,os.path.join(self.path,nameprefix + '.nfo'))
+            self._newFiles['video'].insert(0,os.path.join(self.path,nameprefix + os.path.splitext(self.files['video'][0])[1]))
+            
 
-                        try:
-                            curPath = os.path.join(self.path,f)
-                            os.rename(curPath, newName.encode('utf-8'))
-                        except OSError:
-                            pass
-                        m = self._GetMovieFile()
-                        self.nfoname = m.replace(os.path.splitext(m)[1],'.nfo')
-                
-    def WriteDebugData(self):
-        with open(self.path + os.sep +  'debug.log','w') as d:
-            pp = pprint.PrettyPrinter(indent=10, stream=d)
-            pp.pprint(self.Request.searchResult)
-      
-    def _GetMovieFile(self):
-        for item in os.listdir(self.path):
-            if os.path.splitext(item)[1] in self._FileExts:
-                return item
+    
+        #=======================================================================
+        # Move/Rename the Files
+        #=======================================================================
+        
+        for index,value in enumerate(self._newFiles['video']):
+            os.rename(self.files['video'][index], self._newFiles['video'][index].encode('utf-8'))
+            self.log.info('renamed video file: %s' % value)
+    
+  
+    def _GetDetailedMovieInfos(self, language):
+        _infos = self.tmdb.GetMovieDetails(self.id,language)
+        if len(_infos) > 0:
+            self.infos = json.loads(_infos)
+            self.Name = self.infos['title']
+            self.Year = '(%s)' % self.infos['release_date'][0:4]
+        else:
+            self.infos = False
+    
+    def _update_files_path(self,old,new):
+        for key in self.files.keys():
+            for index,value in enumerate(self.files[key]):
+                current = self.files[key][index]
+                self.files[key][index] = current.replace(old,new)
+    
+    def _GetFileType(self,path,fileext,minSize=None):
+        rfile = []
+        for root,dirs,files in os.walk(path):
+            for item in files:
+                itempath = os.path.join(root,item)
+                if os.path.splitext(item)[1].lower() in fileext:
+                    if minSize is not None:
+                        if os.path.getsize(itempath) / 1024 / 1024 > minSize:
+                            rfile.append(itempath)
+                    else:
+                        rfile.append(itempath)
+        return rfile
          
     def _SearchIDbyNFO(self):
-        for item in self.NFOPaths:
-            getid = NFO(item,None).GetIMDBID()
-            if  getid != False:
-                return getid
+        for item in self.files['nfo']:
+            if(os.path.isfile(item)):
+                getid = NFO(item,None).GetIMDBID()
+                if  getid != False:
+                    return getid
         return False
       
     def _downloadImage(self,url,filename):
@@ -201,7 +210,28 @@ class Movie(object):
         f.close()
         self.log.debug('%s downloaded: %s' % (filename,os.path.basename(self.path)))
     
-
+    def _GetID(self):
+        #First try to get ID from Foldername
+        _id = self._GetIDFromFolder()
+        if _id == False:
+        #Search the NFO Files for ID
+            _id = self._SearchIDbyNFO()
+        #Query the TMDB
+        if _id == False:
+            self.tmdb.SearchMovie(self.Name)
+            if self.tmdb.searchResult['total_results'] == 0:
+                raise Exception('No Search Results')  
+            elif self.tmdb.searchResult['total_results'] == 1:
+                _id = self.tmdb.ParseID()
+            elif self.tmdb.searchResult['total_results'] > 1:
+                _id = self._SearchIDbyTitle()
+            else:
+                raise Exception("No Match found")
+    
+        if _id == False:
+            raise Exception("Could not get ID")
+        else:
+            return _id
     
     def _GetYear(self,string):
         pattern = re.compile('(\\(\d{4}\\))')
@@ -223,26 +253,28 @@ class Movie(object):
         if ', The' in string:
             string = 'The %s' % string.replace(', The','')
             
-        string = string.strip('[').strip(']')
-        string = string.replace('.',' ')
-        
+                
         #Filter out the banned scene words
-        for item in self._banned_words:
-            string = re.sub('('+item+')', '', string,flags=re.IGNORECASE)
-            
-        #merge multiple blanks into one
-        string = re.sub(' +',' ',string)
+        scene_words = open('settings/scene_words.txt').read().replace(' ','').strip(os.linesep) #dirty code change later
+        
+        string = self._sanitizeReleaseName(string,scene_words)
+        
         #Remove the year from movie title
         string = re.sub('(\\(\d{4}\\))', '', string)
+        string = re.sub('\d{4}','',string)
         return string.strip()
 
-    def _GetNFOPaths(self):
-        paths = []
-        for item in os.listdir(self.path):
-            if os.path.splitext(item)[1] == '.nfo':
-                nfopath =  self.path + os.sep + item
-                paths.append(nfopath)
-        return paths
+    def _sanitizeReleaseName(self,string,words):
+        output = []
+        arrMovTitle = string.split('.')
+        if len(arrMovTitle) < 4:
+            arrMovTitle = string.split(' ')
+        for item in arrMovTitle:
+            if not item.lower() in words:
+                output.append(item)
+                    
+        return ' '.join(output)
+        
 
     def _MakeSMBfriendly(self,string):    
         restricted_chars = [ '\\' , '/' , ':' , '*' , '?' , '\"' , '<' , '>' , '|', '\'' ]
@@ -254,13 +286,6 @@ class Movie(object):
                 output += i
         return output
      
-    def _MultiCDMovie(self):
-        multiCD = False
-        for item in os.listdir(self.path):
-            if os.path.splitext(item)[1] in self._FileExts:
-                if 'cd1' in item.lower():
-                    multiCD = True
-        return multiCD
     
     def _force_decode(self,string, codecs=['utf-8', 'cp1252','ascii','euc_jp']):
         if isinstance(string,str):
@@ -273,7 +298,7 @@ class Movie(object):
             return string
     
  
-class Request():
+class tmdb():
     
     urls        = {
                    'search':'/3/search/movie?api_key=%s&query=',
@@ -286,15 +311,20 @@ class Request():
     apikey      = ''
     host        = 'http://api.themoviedb.org'
     port        = 80
-    proxyURL       = ''
-
+    
     def __init__(self,apikey):
-        self.apikey = apikey
-        self.log = TNGLog()
-        self.urls['images'] = self._GetImageURL() + 'original'
+        try:
+            self.apikey = apikey
+            self.log = TNGLog()
+            self.urls['images'] = self._GetImageURL() + 'original'
+        except Exception as e:
+            self.log.error(unicode(e))
+            raise
 
     def SearchMovie(self,string):
+        self.log.debug('Search String:%s' % string)
         url = self.host + self.urls['search'] % self.apikey + self._CreateQuery(string)
+        self.log.debug('Search URL:%s' % url)
         request = urllib2.Request(url, headers=self.headers)
         resp = urllib2.urlopen(request)
         data = resp.read()
@@ -308,11 +338,6 @@ class Request():
         else:
             return False
             
-    
-    def InstallProxy(self):
-        httpproxy = urllib2.ProxyHandler({'http':self.proxyURL})
-        opener = urllib2.build_opener(httpproxy)
-        urllib2.install_opener(opener)
     
     def GetMovieDetails(self,movieID,lang):
         data = ''

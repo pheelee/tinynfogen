@@ -22,7 +22,7 @@ class NFO(object):
                  u'</movie>' 
                  ]
 
-    
+    name = u''
     
         
     def __init__(self,path,content):
@@ -31,12 +31,12 @@ class NFO(object):
         self.logger = logging.getLogger('TinyNFOGen')
     
     def GetIMDBID(self):
-        self.logger.log(logging.DEBUG,'Searching for IMDB in: %s' % self.path)
+        self.logger.debug('Searching for IMDB in: %s' % self.path)
         with open(self.path,'r') as nfo:
             content = nfo.readlines()
         IMDBid = re.findall('tt\d{7}',str(content).encode('utf-8'))
         if len(IMDBid) > 0:
-            self.logger.log(logging.DEBUG,'Found IMDB in: %s' % self.path)
+            self.logger.debug('Found IMDB in: %s' % self.path)
             return IMDBid[0]
         else:
             self.logger.log

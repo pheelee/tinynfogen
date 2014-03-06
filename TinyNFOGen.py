@@ -11,9 +11,6 @@ Search URL: http://api.themoviedb.org/3/search/movie?api_key=xxx&query=after+the
 Detail URL: http://api.themoviedb.org/3/movie/10589?api_key=xxx&language=de
 
 
-ToDo:
-- Improved Error Handling
-- overwrite NFO Parameter
 
 '''
 import os,sys,signal
@@ -29,17 +26,20 @@ sys.path.insert(0, PROJECT_ROOT)
 # Imports
 #===========================================================================
 
-import json
 import ConfigParser
 import logging
+import urllib2
 from logging import handlers
 from argparse import ArgumentParser
 from time import mktime,localtime
-from classes.movie import Movie,Request
+from classes.movie import Movie
 from classes.nfo import NFO
 from classes.mover import Mover
 from classes.log import TNGLog
+from classes.installer import Config, Updater
 from tools.xbmc import XBMCJSON
+from tools.pwobfuscator import obfuscator
+from tools.git import LocalRepository
 
 
 #===========================================================================
@@ -79,8 +79,8 @@ if __name__ == '__main__':
     parser = ArgumentParser(description='Generate NFO Files')
     parser.add_argument('--src',dest='rootFolder',type=unicode,required=True,help='The root folder where the movies are')
     parser.add_argument('--dst',dest='destFolder',type=unicode,required=False,help='The folder where the movies should be put to after processing')
+    parser.add_argument('--create-config',dest='createConfig',action='store_true',help='Create a new config file')
     parser.add_argument('-f',dest='forceRename',action='store_true',help='Forces Folder and File renaming for all items')
-    parser.add_argument('-i',dest='ignoreTNGnfo',action='store_true',help='Ignores an existing TNG NFO and recreates it')
     parser.add_argument('-o',dest='forceOverwrite',action='store_true',help='Forces overwriting of existing movies in destination')
     parser.add_argument('-updateXBMC',dest='forceXBMCUpdate',action='store_true',help='Forces update of XBMC Library (regardless of config setting)')
     parser.add_argument('-v',dest='debugMode',action='store_true',help='Script Output is more verbose')
@@ -92,10 +92,14 @@ if __name__ == '__main__':
     #===========================================================================
     # Logging
     #===========================================================================
+    
+    logpath = os.path.abspath(os.path.join(LogFile, os.pardir))
+    if not os.path.isdir(logpath):
+        os.mkdir(logpath)
     #Create the wrapper log instance
     log = TNGLog()
 
-    formatter = logging.Formatter('%(asctime)s [%(levelname)-8s] %(message)s', '%H:%M:%S')
+    formatter = logging.Formatter('%(asctime)s [%(levelname)-8s] %(message)s', '%d-%m-%Y %H:%M:%S')
     
     #Initialize the File Logger
     hdlr = handlers.RotatingFileHandler(os.path.join(LogFile), 'a', 524288, 10)
@@ -112,35 +116,32 @@ if __name__ == '__main__':
     
     log.logger.setLevel(logging.DEBUG)
 
-    
-    
-    #===========================================================================
-    # Init Classes
-    #===========================================================================
-    config = ConfigParser.ConfigParser() 
-    rootPath = args.rootFolder
-    log.info('Source Path: %s' % rootPath)
-    if args.destFolder:
-        mover = Mover(args.destFolder)
-        log.info('Destination Path: %s' % args.destFolder)
-    else:
-        mover = False
+
     
     #===========================================================================
     # Read Config Settings
     #===========================================================================
     
-    if os.path.isfile(ConfigFile):
-        config.read(ConfigFile)
-        useProxy = config.get('Network', 'useProxy')
-    else:
-        log.error('No config file found!!')
-        sys.exit(1)
+    myconf = Config(ConfigFile)
     
+    if myconf.isAvailable() == False or args.createConfig:
+        myconf.create()
+    
+    config = ConfigParser.ConfigParser()    
+    config.read(ConfigFile)
 
-    
 
-    
+    #===========================================================================
+    # Init Classes
+    #===========================================================================
+    myobfuscate = obfuscator(3)
+    rootPath = args.rootFolder
+    log.info('Source Path: %s' % rootPath)
+    mover = None
+    if args.destFolder:
+        mover = Mover(args.destFolder)
+        log.info('Destination Path: %s' % args.destFolder)
+ 
     #===========================================================================
     # Initialisation
     #===========================================================================
@@ -150,14 +151,39 @@ if __name__ == '__main__':
     log.info('Script started')
     log.debug('Debug Mode On')
     
-    if useProxy == 'True':
+    if config.get("Network","useProxy") == 'True':
         log.info('Using Proxy')
-        proxy = Request()
-        proxy.proxyURL = config.get('Network', 'proxy')
-        proxy.InstallProxy()
+        httpproxy = urllib2.ProxyHandler({'http':myobfuscate.deobfuscate(config.get('Network', 'proxy'))})
+        opener = urllib2.build_opener(httpproxy)
+        urllib2.install_opener(opener)
     
-      
+    
+    #===========================================================================
+    # Check for git update
+    #===========================================================================
+    if config.get('AutoUpdate','enabled') == 'true':
+        git = LocalRepository(os.getcwd(), config.get('AutoUpdate', 'git'))
+        git.fetch()
+        current_branch = git.getCurrentBranch().name
+        for branch in git.getRemoteByName('origin').getBranches():
+            local = git.getHead()
+            remote = branch.getHead()
+            if current_branch == branch.name:
+                if local.hash[:8] != remote.hash[:8]:
+                    log.info('New Version available: %s' % remote.hash[:8])
+                    log.info('Performing Self-Update')
+                    git.pull()
         
+                    args = sys.argv[:]
+                    log.info('Re-spawning %s' % ' '.join(args))
+    
+                    args.insert(0, sys.executable)
+                    if sys.platform == 'win32':
+                        args = ['"%s"' % arg for arg in args]
+    
+                    os.chdir(PROJECT_ROOT)
+                    os.execv(sys.executable, args)
+    
     #===========================================================================
     # #Add a Signal Handler for Ctrl + C
     #===========================================================================
@@ -177,69 +203,74 @@ if __name__ == '__main__':
             
             log.debug("Processing: %s" % item)
             
-            #Create the Movie Object
+
             try:
-                movie = Movie(os.path.join(rootPath,item))
+                #===================================================================
+                # Create the Movie Object
+                #===================================================================
+                movie = Movie(os.path.join(rootPath,item),args.language,config.get('TMDB', 'apikey'),args.globalNFOName)
+                #===================================================================
+                # Rename the Folder and Files
+                #===================================================================
+                movie.rename(args.forceRename)
+                
             except Exception as e:
-                log.error("%s: %s" % (item,e))
+                log.error(str(e))
                 continue
 
-            #Create the Request Object
-            movie.Request = Request(config.get('TMDB', 'apikey'))
-
-            movie.GetID()
+            #===================================================================
+            # Prepare NFO name and check if already created by tinynfogen
+            #===================================================================
+            if args.globalNFOName:
+                movie._newFiles['nfo'][0] = os.path.join(movie.path,args.globalNFOName)
                 
-            #If we don't get an ID we pass to next Movie
-            if movie.id == False:
-                log.warning('No Match found : %s' % (movie.Name + ' ' + movie.Year)) 
-                #movie.WriteDebugData()
-            else:
-                movie.GetDetailedMovieInfos(args.language)
-                if movie.infos != False:
-                    #If we have the Information we rename the Folder and Files
-                    movie.RenameFolder(args.forceRename)
-                    movie.RenameFiles(args.forceRename)    
+            movie.NFO = NFO(movie._newFiles['nfo'][0],movie.infos)
+            
+            #===================================================================
+            # Remove unwanted files from directory
+            #===================================================================
+            movie.clean(('srf','sub','srr','sfv','sft','jpg','tbn','idx','nfo','html','url','par2','rar'))
+            log.debug('Cleaned files: %s' % (movie.Name + movie.Year))
+            
+            #===================================================================
+            # Create the new NFO File
+            #===================================================================
+            #Write new NFO
+            movie.NFO.Write(BoxeeBoxDict)
+            log.info('NFO generated : %s' % (movie.Name + movie.Year)) 
 
-                    if args.globalNFOName:
-                        movie.nfoname = args.globalNFOName
-                        
-                    movie.NFO = NFO(os.path.join(movie.path, movie.nfoname),movie.infos)
-                    exists = movie.HasTNGnfo()
-                    #Remove unwanted files from directory
-                    movie.CleanFiles(('srf','sub','srr','sfv','sft','jpg','tbn','idx','nfo'))
-                    log.debug('Cleaned files: %s' % (movie.Name + movie.Year))
-                    if  not ((exists == True) and (args.ignoreTNGnfo == False)):
-                        #Write new NFO
-                        movie.NFO.Write(BoxeeBoxDict)
-                        log.info('NFO Generated : %s' % (movie.Name + movie.Year)) 
-
-                    #Get Fanart and Poster
-                    movie.GetImages()
-                        
-                    #Move the Movie
-                    if not mover == False:
-                        mover.move(movie.path,args.forceOverwrite)
+            #===================================================================
+            # Get Fanart and Poster
+            #===================================================================
+            movie.GetImages()
+                
+            #===================================================================
+            # Move the Movie
+            #===================================================================
+            if mover:
+                if mover.move(movie.path,args.forceOverwrite):
                         
                         
-    #===========================================================================
-    # Update the XBMC Library
-    #===========================================================================
-    if config.get('XBMC', 'updateLibrary') == 'True' or args.forceXBMCUpdate == True:
-        
-        hostname = config.get('XBMC', 'hostname')
-        port = config.get('XBMC', 'port')
-        username = config.get('XBMC', 'username')
-        password = config.get('XBMC', 'password')
-        
-    
-        http_address = 'http://%s:%s/jsonrpc' % (hostname, port)
-    
-        xbmc = XBMCJSON(http_address,username,password)
-        try:
-            result = xbmc.VideoLibrary.Scan()
-        except:
-            result = 'failed'
-        log.info('Updating XBMC Library: %s' % result)
+                    #===========================================================================
+                    # Update the XBMC Library
+                    #===========================================================================
+                    if config.get('XBMC', 'updateLibrary') == 'True' or args.forceXBMCUpdate == True:
+                        
+                        hostname = config.get('XBMC', 'hostname')
+                        port = config.get('XBMC', 'port')
+                        username = config.get('XBMC', 'username')
+                        password = myobfuscate.deobfuscate(config.get('XBMC', 'password'))
+                        libraryPath = config.get('XBMC','libraryPath')
+                    
+                        http_address = 'http://%s:%s/jsonrpc' % (hostname, port)
+                
+                        xbmc = XBMCJSON(http_address,username,password)
+                        try:
+                            dst = libraryPath + mover.dst
+                            result = xbmc.VideoLibrary.Scan(**{"directory":dst})
+                        except Exception as e:
+                            result = str(e)
+                        log.info('Updating XBMC Library: %s' % result)
     
     #===========================================================================
     # End Secion / Cleanup
