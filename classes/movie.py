@@ -22,11 +22,11 @@ class Movie(object):
                  #Path to the Folder containing the Movie
                  path,
                  #Language for the Movie
-                 language = '',
+                 language='',
                  #ApiKey for TMDB
-                 apikey = '',
+                 apikey='',
                  #Global NFO Name
-                 globalNFOName = None
+                 globalNFOName=None
                  ):
 
         self.files = {}
@@ -71,7 +71,6 @@ class Movie(object):
         except Exception:
             raise
 
-    
     def GetImages(self):
         if self.infos['poster_path'] is not None:
             self._downloadImage(self.tmdb.urls['images'] + self.infos['poster_path'],'movie.tbn')
@@ -202,14 +201,17 @@ class Movie(object):
                     return getid
         return False
       
-    def _downloadImage(self,url,filename):
-        request = urllib2.Request(url)
-        resp = urllib2.urlopen(request)
-        data = resp.read()
-        f = open(os.path.join(self.path,filename),'wb')
-        f.write(data)
-        f.close()
-        self.log.debug('%s downloaded: %s' % (filename,os.path.basename(self.path)))
+    def _downloadImage(self, url, filename):
+        if not os.path.isfile(os.path.join(self.path, filename)):
+            request = urllib2.Request(url)
+            resp = urllib2.urlopen(request)
+            data = resp.read()
+            f = open(os.path.join(self.path, filename),'wb')
+            f.write(data)
+            f.close()
+            self.log.info('%s downloaded: %s' % (filename,os.path.basename(self.path)))
+        else:
+            self.log.debug('%s exists: %s' % (filename,os.path.basename(self.path)))
     
     def _GetID(self):
         #First try to get ID from Foldername
