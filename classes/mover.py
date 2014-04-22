@@ -63,19 +63,22 @@ class Mover(object):
         if os.path.isdir(dst):
             #There exists already a Movie
             #we compare the resolution or size using the metadata of the movie
-            compare = Comparer()
-            compare.addFile(src)
-            compare.addFile(dst)
-            if compare.hasResolution() == True:
-                if compare.item[src]['resolution'] > compare.item[dst]['resolution']:
-                    overwrite = True
-                else:
-                    overwrite = False
-            else:
-                if compare.item[src]['size'] > compare.item[dst]['size']:
-                    overwrite = True
-                else:
-                    overwrite = False
+            try:
+	            compare = Comparer(src,dst)
+	
+	            if compare.hasResolution():
+	                if compare.item[src]['resolution'] > compare.item[dst]['resolution']:
+	                    overwrite = True
+	                else:
+	                    overwrite = False
+	            else:
+	                if compare.item[src]['size'] > compare.item[dst]['size']:
+	                    overwrite = True
+	                else:
+	                    overwrite = False
+            except Exception, e:
+	        	overwrite = False
+	        	self.log.error(unicode(e))
                 
             if overwrite or forceOverwrite:
                 self.log.info('Overwriting existing Movie : %s' % dst)
@@ -160,16 +163,23 @@ class Mover(object):
 
 class Comparer(object):
     
-    def __init__(self):
+    def __init__(self, path1, path2):
         self.log = TNGLog()
         self.item = {}
+        if self.addFile(path1) or self.addFile(path2):
+        	raise Exception("skipping compare: at least one file is missing")
     
     def addFile(self,path):
         m = Movie(path)
-        mfile = os.path.join(path,m.GetMovieFile())
+        mcont = m.GetMovieFile()
+        if not mcont:
+            return False
+        mfile = os.path.join(path,mcont)
         self.item[path] = {}
         self.item[path]['resolution'] = self._getResolution(mfile)
         self.item[path]['size'] = self._getSize(mfile)
+        
+        return True
     
     def hasResolution(self):
         for i in self.item.keys():
