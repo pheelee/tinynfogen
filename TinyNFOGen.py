@@ -18,7 +18,7 @@ import sys
 import signal
 
 
-#===========================================================================
+# ===========================================================================
 # Add Program to PythonPath 
 #===========================================================================
 PROJECT_ROOT = os.path.dirname(__file__)
@@ -186,9 +186,12 @@ if __name__ == '__main__':
     for item in os.listdir(rootPath):
 
         #filter out folders beginning with . (Unix hidden dirs) or @ (Synology System Folders) or _ (sabnzbd Operations)
-
-        if os.path.isdir(os.path.join(rootPath, item)) and not item.startswith('.') and not item.startswith(
-                '@') and not item.startswith('_'):
+        filterext = (
+            '.',  # unix hidden folders
+            '@',  # Synology System Folders
+            '_'   # sabnzbd Operations
+        )
+        if os.path.isdir(os.path.join(rootPath, item)) and not item.startswith(filterext):
 
             log.debug("Processing: %s" % item)
 
@@ -196,8 +199,7 @@ if __name__ == '__main__':
                 #===================================================================
                 # Create the Movie Object
                 #===================================================================
-                movie = Movie(os.path.join(rootPath, item), args.language, config.get('TMDB', 'apikey'),
-                              args.globalNFOName)
+                movie = Movie(os.path.join(rootPath, item), args.language, config.get('TMDB', 'apikey'))
                 #===================================================================
                 # Rename the Folder and Files
                 #===================================================================
