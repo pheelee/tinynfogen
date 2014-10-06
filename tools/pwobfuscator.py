@@ -1,15 +1,16 @@
-'''
+"""
 Created on Sept 13, 2013
 
 @author: phil
-'''
+"""
 
-class obfuscator(object):
+
+class Obfuscator(object):
     
-    def __init__(self,shift):
+    def __init__(self, shift):
         self.shift = shift
 
-    def _convert(self,string,operator):
+    def _convert(self, string, operator):
         
         ob = []
         output = []
@@ -24,8 +25,8 @@ class obfuscator(object):
             
         return ''.join(output)
 
-    def obfuscate(self,string):
+    def obfuscate(self, string):
         return self._convert(string, 'obfuscate')
         
-    def deobfuscate(self,string):
+    def deobfuscate(self, string):
         return self._convert(string, 'deobfuscate')

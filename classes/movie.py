@@ -1,14 +1,16 @@
-'''
+"""
 Created on 29.03.2013
 
-@author: ritterph
-'''
+@author: pri@irbe.ch
+"""
 
 import os, re, shutil
 from nfo import NFO
 import urllib2
 import json
 from log import TNGLog
+from ConfigParser import ConfigParser
+
 
 class Movie(object):
     
@@ -21,23 +23,25 @@ class Movie(object):
                  #Path to the Folder containing the Movie
                  path,
                  #Language for the Movie
-                 language = '',
+                 language='',
                  #ApiKey for TMDB
-                 apikey = '',
-                 #Global NFO Name
-                 globalNFOName = None
+                 apikey='',
                  ):
 
         self.files = {}
-        self._newFiles = {}
-        self._newFiles['video'] = []
-        self._newFiles['nfo'] = []
+        self.newFiles = {}
+        self.newFiles['video'] = []
+        self.newFiles['nfo'] = []
         self.infos = u''
         self.NFO = u''
         self.nfoname = u''
         self.path = path
         self.log = TNGLog()
         self.id = False
+
+        # Read the configuration
+        self.config = ConfigParser()
+        self.config.read(os.path.join(os.getcwd(), 'settings.cfg'))
         
         try:
             #=======================================================================
@@ -45,8 +49,6 @@ class Movie(object):
             #=======================================================================
             self.files['video'] = self._GetFileType(self.path, ('.mkv','.mp4','.mov','.mpg','.avi','.mpeg'),100) #For Movies we want a minimum filesize of 100 MB, otherwise we assume it is a sample
             self.files['nfo'] = self._GetFileType(self.path, '.nfo')
-            if globalNFOName is not None:
-                self.files['nfo'].append(self.path + os.sep + globalNFOName)
             self.files['image'] = self._GetFileType(self.path, ('.jpg','.jpeg','.png','.tbn'))
     
             #=======================================================================
@@ -70,7 +72,6 @@ class Movie(object):
         except Exception:
             raise
 
-    
     def GetImages(self):
         if self.infos['poster_path'] is not None:
             self._downloadImage(self.tmdb.urls['images'] + self.infos['poster_path'],'movie.tbn')
@@ -86,9 +87,9 @@ class Movie(object):
         else:
             return False
      
-    def clean(self,extensions):
+    def clean(self, extensions):
         for i in os.listdir(self.path):
-            itempath = os.path.join(self.path,i)
+            itempath = os.path.join(self.path, i)
             if os.path.isdir(itempath):
                 shutil.rmtree(itempath)
             elif os.path.splitext(i)[1].lstrip('.') in extensions:
@@ -97,7 +98,7 @@ class Movie(object):
             elif 'sample' in i.lower():
                 os.remove(itempath)
     
-    def rename(self,force):
+    def rename(self, force):
         
         self._rename_folder(force)
         self._rename_files(force)
@@ -112,7 +113,7 @@ class Movie(object):
                  
         return found
 
-    def _rename_folder(self,force):
+    def _rename_folder(self, force):
            
         currentName = (os.path.basename(self.path))
         newName = self.infos['title'] + ' ' + self.Year
@@ -132,10 +133,8 @@ class Movie(object):
             self.path = newPath.decode('utf-8')
             self.log.info("Movie renamed: %s" % newName)
     
-    def _rename_files(self,force):
-        
-        
-        
+    def _rename_files(self, force):
+
         #=======================================================================
         # Build the new Paths
         #=======================================================================
@@ -143,16 +142,34 @@ class Movie(object):
         nameprefix = self._MakeSMBfriendly(self.infos['title'] + ' ' + self.Year)
         
         if len(self.files['video']) > 1:
-            self._newFiles['nfo'].insert(0,os.path.join(self.path,'movie.nfo'))
-            for index,video in enumerate(self.files['video']):
+            self.newFiles['nfo'].insert(0, os.path.join(self.path, 'movie.nfo'))
+
+            for index, video in enumerate(self.files['video']):
+
+                # Check if we have a naming scheme cd1,cd2 etc.
                 if re.search('cd[1-9]', video.lower()):
-                    
-                    _moviename = nameprefix + ' ' + re.findall('cd[1-9]',video.lower())[0]
+                    _moviename = nameprefix + ' ' + re.findall('cd[1-9]', video.lower())[0]
                     _extension = os.path.splitext(self.files['video'][index])[1]
-                    self._newFiles['video'].insert(index,os.path.join(self.path,_moviename +_extension))
+                    self.newFiles['video'].insert(index, os.path.join(self.path, _moviename + _extension))
+
+            # Check if the last byte of the filename is an incrementing number
+            suffixList = []
+            for item in self.files['video']: suffixList.append(os.path.splitext(os.path.basename(item))[0][-1])
+            # Compare against number
+            try:
+                suffixList = [int(i) for i in suffixList]
+                if suffixList == range(1, len(self.files['video'])+1):
+                    for index, video in enumerate(self.files['video']): self.newFiles['video'].insert(index, os.path.join(self.path, "%s cd%i%s" % (nameprefix, index + 1, os.path.splitext(self.files['video'][index])[1])))
+
+            except ValueError:
+                # We have characters
+                pass
+
+        elif len(self.files['video']) == 1:
+            self.newFiles['nfo'].insert(0, os.path.join(self.path, nameprefix + '.nfo'))
+            self.newFiles['video'].insert(0, os.path.join(self.path, nameprefix + os.path.splitext(self.files['video'][0])[1]))
         else:
-            self._newFiles['nfo'].insert(0,os.path.join(self.path,nameprefix + '.nfo'))
-            self._newFiles['video'].insert(0,os.path.join(self.path,nameprefix + os.path.splitext(self.files['video'][0])[1]))
+            self.log.warning("We have no video file for %s" % nameprefix)
             
 
     
@@ -160,14 +177,14 @@ class Movie(object):
         # Move/Rename the Files
         #=======================================================================
         
-        for index,value in enumerate(self._newFiles['video']):
-            os.rename(self.files['video'][index], self._newFiles['video'][index].encode('utf-8'))
+        for index, value in enumerate(self.newFiles['video']):
+            os.rename(self.files['video'][index], self.newFiles['video'][index].encode('utf-8'))
             self.log.info('renamed video file: %s' % value)
     
   
     def _GetDetailedMovieInfos(self, language):
         _infos = self.tmdb.GetMovieDetails(self.id,language)
-        if len(_infos) > 0:
+        if _infos:
             self.infos = json.loads(_infos)
             self.Name = self.infos['title']
             self.Year = '(%s)' % self.infos['release_date'][0:4]
@@ -201,14 +218,17 @@ class Movie(object):
                     return getid
         return False
       
-    def _downloadImage(self,url,filename):
-        request = urllib2.Request(url)
-        resp = urllib2.urlopen(request)
-        data = resp.read()
-        f = open(os.path.join(self.path,filename),'wb')
-        f.write(data)
-        f.close()
-        self.log.debug('%s downloaded: %s' % (filename,os.path.basename(self.path)))
+    def _downloadImage(self, url, filename):
+        if not os.path.isfile(os.path.join(self.path, filename)):
+            request = urllib2.Request(url)
+            resp = urllib2.urlopen(request)
+            data = resp.read()
+            f = open(os.path.join(self.path, filename),'wb')
+            f.write(data)
+            f.close()
+            self.log.info('%s downloaded: %s' % (filename,os.path.basename(self.path)))
+        else:
+            self.log.debug('%s exists: %s' % (filename,os.path.basename(self.path)))
     
     def _GetID(self):
         #First try to get ID from Foldername
@@ -220,7 +240,9 @@ class Movie(object):
         if _id == False:
             self.tmdb.SearchMovie(self.Name)
             if self.tmdb.searchResult['total_results'] == 0:
-                raise Exception('No Search Results')  
+                if self.config.get('General', 'interactive') == 'True':
+                    _id = self._GetIDfromUser()
+                #raise Exception('No Search Results')
             elif self.tmdb.searchResult['total_results'] == 1:
                 _id = self.tmdb.ParseID()
             elif self.tmdb.searchResult['total_results'] > 1:
@@ -229,10 +251,21 @@ class Movie(object):
                 raise Exception("No Match found")
     
         if _id == False:
-            raise Exception("Could not get ID")
+            raise Exception("Could not get ID for item %s" % os.path.basename(self.path))
         else:
             return _id
-    
+
+    def _GetIDfromUser(self):
+        # Asks the User for IMDB ID
+        # return: (string)ID
+        #         False
+        while True:
+            imdbID = raw_input("Enter IMDB ID (tt0208092) or enter to abort:")
+            if re.match('tt\d{7}', imdbID):
+                return imdbID
+            if len(imdbID) == 0:
+                return False
+
     def _GetYear(self,string):
         pattern = re.compile('(\\(\d{4}\\))')
         m = pattern.search(string)
@@ -354,7 +387,7 @@ class tmdb():
             if data != '':
                 return self.detailResult
             else:
-                return ''
+                return False
        
     def _CreateQuery(self,string):
         return string.replace(' ','+').replace('(','').replace(')','')

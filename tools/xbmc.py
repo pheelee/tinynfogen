@@ -1,16 +1,18 @@
-'''
+"""
 Created on May 5, 2013
 
 @author: phil
-'''
+"""
 
 import json
-import urllib2, base64
+import urllib2
+import base64
 from classes.log import TNGLog
 
-class XBMCJSON:
 
-    def __init__(self, server,username = None,password = None):
+class XbmcJson:
+
+    def __init__(self, server, username=None, password=None):
         self.username = username
         self.password = password
         self.server = server
@@ -20,7 +22,7 @@ class XBMCJSON:
     def __call__(self, **kwargs):
         method = '.'.join(map(str, self.n))
         self.n = []
-        return XBMCJSON.__dict__['Request'](self, method, kwargs)
+        return XbmcJson.__dict__['Request'](self, method, kwargs)
 
     def __getattr__(self,name):
         if not self.__dict__.has_key('n'):
