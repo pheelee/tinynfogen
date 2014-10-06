@@ -197,7 +197,6 @@ class LocalRepository(Repository):
         spec += self._normalizeRefName(end)
         return list(self._getCommits(spec, includeMerges = includeMerges))
     def getCurrentBranch(self):
-        #todo: improve this method of obtaining current branch
         for branch_name in self._executeGitCommandAssertSuccess("branch").stdout:
             branch_name = branch_name.strip()
             if not branch_name.startswith("*"):

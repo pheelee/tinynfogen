@@ -7,7 +7,8 @@ Created on May 5, 2013
 import json
 import urllib2
 import base64
-from classes.log import TNGLog
+
+from tng.core.log import TNGLog
 
 
 class XbmcJson:

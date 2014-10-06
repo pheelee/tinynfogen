@@ -7,7 +7,7 @@ Created on 16.11.2013
 import os
 import sys
 import ConfigParser
-from tools.git import LocalRepository
+from libs.git import LocalRepository
 
 
 class Updater(object):
@@ -68,11 +68,11 @@ class Config(object):
         #Get the User input
         print "Generating a new config file.."
 
-        interactive = self.userprompt("Enable Interactive Mode", "True, False", "False")
-        apikey = self.userprompt("apikey for themoviedb.org")
-        httpproxy = self.userprompt("HTTP Proxy url")
-        usexbmc = self.userprompt("Use XBMC", "Yes,No", "No")
-        autoupdate = self.userprompt("Enable AutoUpdate", "true,false", "true")
+        interactive = self.__userprompt("Enable Interactive Mode", "True, False", "False")
+        apikey = self.__userprompt("apikey for themoviedb.org")
+        httpproxy = self.__userprompt("HTTP Proxy url")
+        usexbmc = self.__userprompt("Use XBMC", "Yes,No", "No")
+        autoupdate = self.__userprompt("Enable AutoUpdate", "true,false", "true")
 
         #=======================================================================
         # General Section
@@ -84,11 +84,11 @@ class Config(object):
         #=======================================================================
         if usexbmc.lower() == "yes":
             updatelibrary = "True"
-            hostname = self.userprompt("XBMC Hostname or IP Address")
-            port = self.userprompt("XBMC Port")
-            username = self.userprompt("XBMC Username")
-            password = self.userprompt("XBMC Password")
-            librarypath = self.userprompt("XBMC Library Path (e.g. nfs://192.168.1.100)")
+            hostname = self.__userprompt("XBMC Hostname or IP Address")
+            port = self.__userprompt("XBMC Port")
+            username = self.__userprompt("XBMC Username")
+            password = self.__userprompt("XBMC Password")
+            librarypath = self.__userprompt("XBMC Library Path (e.g. nfs://192.168.1.100)")
         else:
             updatelibrary = "False"
             hostname = ""
@@ -129,7 +129,7 @@ class Config(object):
         cfg.add_section("AutoUpdate")
         
         if autoupdate == "true":
-            git = self.userprompt("Path to git binary")
+            git = self.__userprompt("Path to git binary")
         else:
             git = ''
         
@@ -143,7 +143,7 @@ class Config(object):
             cfg.write(configuration)
         
     @staticmethod
-    def userprompt(prompt, validation=None, default=''):
+    def __userprompt(prompt, validation=None, default=''):
         while True:
             cprompt = "%s (%s) [%s]:" % (prompt, validation, default)
             if validation is None:

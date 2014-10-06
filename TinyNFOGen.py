@@ -34,14 +34,13 @@ import urllib2
 from logging import handlers
 from argparse import ArgumentParser
 from time import mktime, localtime
-from classes.movie import Movie
-from classes.nfo import NFO
-from classes.mover import Mover
-from classes.log import TNGLog
-from classes.installer import Config, Updater
-from tools.xbmc import XbmcJson
-from tools.pwobfuscator import Obfuscator
-from tools.git import LocalRepository
+from tng.core.movie import Movie
+from tng.core.nfo import NFO
+from tng.core.mover import Mover
+from tng.core.log import TNGLog
+from tng.core.installer import Config, Updater
+from libs.xbmc import XbmcJson
+from libs.pwobfuscator import Obfuscator
 
 
 #===========================================================================
@@ -170,7 +169,7 @@ if __name__ == '__main__':
             log.info('Performing Self-Update')
             updater.update()
             log.info('Re-spawning %s' % ' '.join(args))
-            updater.respawn(PROJECT_ROOT)
+            updater.respawn()
 
     #===========================================================================
     # #Add a Signal Handler for Ctrl + C

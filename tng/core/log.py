@@ -10,33 +10,33 @@ import re
 
 class TNGLog(object):
 
-    _private_strings = ('apikey', 'api_key')
+    __private_strings = ('apikey', 'api_key')
     
     def __init__(self):
     
         self.logger = logging.getLogger('TinyNFOGen')
         #Add coloring
-        logging.StreamHandler.emit = self._add_coloring_to_emit_ansi(logging.StreamHandler.emit)
+        logging.StreamHandler.emit = self.__add_coloring_to_emit_ansi(logging.StreamHandler.emit)
 
     def info(self, msg):
-        self.logger.info(self._privatize(msg))
+        self.logger.info(self.__privatize(msg))
     
     def warning(self, msg):
-        self.logger.warning(self._privatize(msg))
+        self.logger.warning(self.__privatize(msg))
     
     def error(self, msg):
-        self.logger.error(self._privatize(msg))
+        self.logger.error(self.__privatize(msg))
         
     def debug(self, msg):
-        self.logger.debug(self._privatize(msg))
+        self.logger.debug(self.__privatize(msg))
 
-    def _privatize(self, msg):
-        for r in self._private_strings:
+    def __privatize(self, msg):
+        for r in self.__private_strings:
             msg = re.sub('(%s=)[^\&]+' % r, '%s=xxx' % r, msg)
         return msg
 
     @staticmethod
-    def _add_coloring_to_emit_ansi(fn):
+    def __add_coloring_to_emit_ansi(fn):
             def new(*args):
                 levelno = args[1].levelno
                 if levelno >= 50:
