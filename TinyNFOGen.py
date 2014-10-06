@@ -47,8 +47,8 @@ from tools.git import LocalRepository
 #===========================================================================
 # Paths
 #===========================================================================
-LogFile = os.path.join(os.getcwd(), 'logfiles', os.path.splitext(os.path.basename(__file__))[0] + '.log')
-ConfigFile = os.path.join(os.getcwd(), 'settings.cfg')
+LogFile = os.path.join(os.path.dirname(__file__), 'logfiles', os.path.splitext(os.path.basename(__file__))[0] + '.log')
+ConfigFile = os.path.join(os.path.dirname(__file__), 'settings.cfg')
 
 #===========================================================================
 # NFO Specs
