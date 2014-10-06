@@ -68,11 +68,17 @@ class Config(object):
         #Get the User input
         print "Generating a new config file.."
 
+        interactive = self.userprompt("Enable Interactive Mode", "True, False", "False")
         apikey = self.userprompt("apikey for themoviedb.org")
         httpproxy = self.userprompt("HTTP Proxy url")
         usexbmc = self.userprompt("Use XBMC", "Yes,No", "No")
         autoupdate = self.userprompt("Enable AutoUpdate", "true,false", "true")
 
+        #=======================================================================
+        # General Section
+        #=======================================================================
+        cfg.add_section("General")
+        cfg.set("General", interactive)
         #=======================================================================
         # XBMC Section
         #=======================================================================

@@ -9,6 +9,7 @@ from nfo import NFO
 import urllib2
 import json
 from log import TNGLog
+from ConfigParser import ConfigParser
 
 
 class Movie(object):
@@ -37,6 +38,10 @@ class Movie(object):
         self.path = path
         self.log = TNGLog()
         self.id = False
+
+        # Read the configuration
+        self.config = ConfigParser()
+        self.config.read(os.path.join(os.getcwd(), 'settings.cfg'))
         
         try:
             #=======================================================================
@@ -235,7 +240,9 @@ class Movie(object):
         if _id == False:
             self.tmdb.SearchMovie(self.Name)
             if self.tmdb.searchResult['total_results'] == 0:
-                raise Exception('No Search Results')  
+                if self.config.get('General', 'interactive') == 'True':
+                    _id = self._GetIDfromUser()
+                #raise Exception('No Search Results')
             elif self.tmdb.searchResult['total_results'] == 1:
                 _id = self.tmdb.ParseID()
             elif self.tmdb.searchResult['total_results'] > 1:
@@ -244,10 +251,21 @@ class Movie(object):
                 raise Exception("No Match found")
     
         if _id == False:
-            raise Exception("Could not get ID")
+            raise Exception("Could not get ID for item %s" % os.path.basename(self.path))
         else:
             return _id
-    
+
+    def _GetIDfromUser(self):
+        # Asks the User for IMDB ID
+        # return: (string)ID
+        #         False
+        while True:
+            imdbID = raw_input("Enter IMDB ID (tt0208092) or enter to abort:")
+            if re.match('tt\d{7}', imdbID):
+                return imdbID
+            if len(imdbID) == 0:
+                return False
+
     def _GetYear(self,string):
         pattern = re.compile('(\\(\d{4}\\))')
         m = pattern.search(string)
