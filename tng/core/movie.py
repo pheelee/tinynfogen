@@ -61,7 +61,23 @@ class Movie(object):
                 #=======================================================================
                 # Get an IMDB ID
                 #=======================================================================
-                self.id = self.__GetID()
+
+                #First try to get ID from Foldername
+                _id = self.__GetIDFromFolder()
+                if _id is False:
+                #Search the NFO Files for ID
+                    _id = self.__SearchIDbyNFO()
+                #Query the TMDB
+                if _id is False:
+                    _id = self.tmdb.search(self.Name)
+
+                if _id is False and self.config.get('General', 'interactive') == 'True':
+                    _id = self.__GetIDfromUser()
+
+                if _id is False:
+                    raise Exception("Could not get ID for item %s" % os.path.basename(self.path))
+                else:
+                    self.id = _id
                 
                 #===================================================================
                 # Get detailed Movie Information and store them in self.infos
@@ -101,16 +117,7 @@ class Movie(object):
         
         self.__rename_folder(force)
         self.__rename_files()
-    
-    def __SearchIDbyTitle(self):
-        found = False
-        for result in self.tmdb.searchResult['results']:
-            if result['original_title'] == self.Name:
-                found = result['id']
-            elif result['title'] == self.Name:
-                found = result['id']
-                 
-        return found
+
 
     def __rename_folder(self, force):
            
@@ -123,7 +130,6 @@ class Movie(object):
         if currentName != newName or force == True:
             #Rename folder and set new path
             try:
-                #ToDo:Check if we have already UTF-8
                 newPath = newPath.encode('utf-8')
                 os.rename(self.path, newPath)
             except OSError as e:
@@ -231,32 +237,6 @@ class Movie(object):
         else:
             self.log.debug('%s exists: %s' % (filename,os.path.basename(self.path)))
 
-    def __GetID(self):
-        #First try to get ID from Foldername
-        _id = self.__GetIDFromFolder()
-        if _id is False:
-        #Search the NFO Files for ID
-            _id = self.__SearchIDbyNFO()
-        #Query the TMDB
-        if _id is False:
-            #ToDo: Put the whole tmdb search shit into the tmdb object
-            self.tmdb.search(self.Name)
-            if self.tmdb.searchResult['total_results'] == 0:
-                if self.config.get('General', 'interactive') == 'True':
-                    _id = self.__GetIDfromUser()
-                #raise Exception('No Search Results')
-            elif self.tmdb.searchResult['total_results'] == 1:
-                _id = self.tmdb.ParseID()
-            elif self.tmdb.searchResult['total_results'] > 1:
-                _id = self.__SearchIDbyTitle()
-            else:
-                raise Exception("No Match found")
-    
-        if _id is False:
-            raise Exception("Could not get ID for item %s" % os.path.basename(self.path))
-        else:
-            return _id
-
     @staticmethod
     def __GetIDfromUser():
         # Asks the User for IMDB ID
@@ -292,10 +272,9 @@ class Movie(object):
             
                 
         #Filter out some common scene words specified by the user
-        #Todo: make scene words optional (don't integrate in project)
-        scene_words = open('scene_words.txt').read().replace(' ','').strip(os.linesep)
-        
-        string = self.__sanitizeReleaseName(string, scene_words)
+        if os.path.isfile('scene_words.txt'):
+            scene_words = list(open('scene_words.txt').read().replace(' ','').split(os.linesep))
+            string = self.__sanitizeReleaseName(string, scene_words)
         
         #Remove the year from movie title
         string = re.sub('(\\(\d{4}\\))', '', string)
@@ -331,7 +310,6 @@ class Movie(object):
             for i in codecs:
                 try:
                     return string.decode(i)
-                #ToDo: Find exceptions
                 except:
                     pass
         else:
@@ -362,22 +340,28 @@ class tmdb():
             raise
 
     def search(self, string):
+        """
+        :param string: movie name
+        :return: imdb id
+        """
         self.log.debug('Search String:%s' % string)
         url = self.host + self.urls['search'] % self.apikey + self.__CreateQuery(string)
         self.log.debug('Search URL:%s' % url)
         request = urllib2.Request(url, headers=self.headers)
         resp = urllib2.urlopen(request)
         data = resp.read()
-        self.searchResult = json.loads(data)
+        result = json.loads(data)
 
-    
-    def ParseID(self):
-        if self.searchResult['total_results'] == 1:
-            movieID = self.searchResult['results'][0]['id']
-            return movieID
-        else:
-            return False
-    
+        if result['total_results'] == 1:
+            return result['results'][0]['id']
+        elif result['total_results'] > 1:
+            for res in result['results']:
+                if res['original_title'] == string:
+                    return res['id']
+                elif res['title'] == string:
+                    return res['id']
+        return False
+
     def GetMovieDetails(self, movieID, lang):
         data = ''
         url = self.host + self.urls['detail'] % (movieID, self.apikey, lang)
