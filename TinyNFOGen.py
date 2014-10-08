@@ -40,7 +40,7 @@ from tng.core.mover import Mover
 from tng.core.log import TNGLog
 from tng.core.installer import Config, Updater
 from libs.xbmc import XbmcJson
-from libs.pwobfuscator import Obfuscator
+from libs.crypt_s import Crypt
 
 
 #===========================================================================
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     #===========================================================================
     # Init Classes
     #===========================================================================
-    myobfuscate = Obfuscator(3)
+    mycrypt = Crypt(__file__)
     rootPath = args.rootFolder
     log.info('Source Path: %s' % rootPath)
     mover = None
@@ -154,7 +154,7 @@ if __name__ == '__main__':
 
     if config.get("Network", "useProxy") == 'True':
         log.info('Using Proxy')
-        httpproxy = urllib2.ProxyHandler({'http': myobfuscate.deobfuscate(config.get('Network', 'proxy'))})
+        httpproxy = urllib2.ProxyHandler({'http': mycrypt.decrypt(config.get('Network', 'proxy'))})
         opener = urllib2.build_opener(httpproxy)
         urllib2.install_opener(opener)
 
@@ -248,7 +248,7 @@ if __name__ == '__main__':
                         hostname = config.get('XBMC', 'hostname')
                         port = config.get('XBMC', 'port')
                         username = config.get('XBMC', 'username')
-                        password = myobfuscate.deobfuscate(config.get('XBMC', 'password'))
+                        password = mycrypt.decrypt(config.get('XBMC', 'password'))
                         libraryPath = config.get('XBMC', 'libraryPath')
 
                         http_address = 'http://%s:%s/jsonrpc' % (hostname, port)
