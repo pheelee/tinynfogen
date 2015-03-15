@@ -24,7 +24,7 @@ dstFolder must have the following structure:
         M-S
         T-Z
 
-Folders starting with _ are ignored
+Folders starting with _ and @ are ignored
 """
 
 import os
@@ -109,22 +109,22 @@ class Mover(object):
     
     def __ChooseDestination(self,name):
         if os.path.basename(name).startswith(('The','Der','Die','Das')):
-            _letter = os.path.basename(name)[4]
+            letter = os.path.basename(name)[4]
         else:
-            _letter = os.path.basename(name)[0]
+            letter = os.path.basename(name)[0]
         
-        if self.__is_number(_letter):
-            _letter = 'A' #For now we put Movies beginning with a Number to Folder A-
-        elif _letter.isalnum() is False: #if we have a special char, we search for the first Alphabetic Char
-            _letter = self.__getFirstAlphaChar(os.path.basename(name))
+        if self.__is_number(letter):
+            letter = 'A' #For now we put Movies beginning with a Number to Folder A-
+        elif letter.isalpha() is False: #if we have a special char, we search for the first Alphabetic Char
+            letter = self.__getFirstAlphaChar(os.path.basename(name))
 		
 		
-        if _letter is False:
+        if letter is False:
             self.log.error('Could not get Start Char for Movie %s' % os.path.basename(name))
             return False
         else:
             for i in self.__dstFolders.keys():
-                if _letter.upper() in self.__dstFolders[i]:
+                if letter.upper() in self.__dstFolders[i]:
                     return i
             
     @staticmethod
@@ -137,9 +137,9 @@ class Mover(object):
         return False
     
     @staticmethod
-    def __is_number(_s):
+    def __is_number(x):
         try:
-            float(_s)
+            float(x)
             return True
         except ValueError:
             return False
