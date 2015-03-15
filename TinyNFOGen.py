@@ -34,14 +34,13 @@ import urllib2
 from logging import handlers
 from argparse import ArgumentParser
 from time import mktime, localtime
-from classes.movie import Movie
-from classes.nfo import NFO
-from classes.mover import Mover
-from classes.log import TNGLog
-from classes.installer import Config, Updater
-from tools.xbmc import XbmcJson
-from tools.pwobfuscator import Obfuscator
-from tools.git import LocalRepository
+from tng.core.movie import Movie
+from tng.core.nfo import NFO
+from tng.core.mover import Mover
+from tng.core.log import TNGLog
+from tng.core.installer import Config, Updater
+from libs.xbmc import XbmcJson
+from libs.crypt_s import Crypt
 
 
 #===========================================================================
@@ -136,7 +135,7 @@ if __name__ == '__main__':
     #===========================================================================
     # Init Classes
     #===========================================================================
-    myobfuscate = Obfuscator(3)
+    mycrypt = Crypt(__file__)
     rootPath = args.rootFolder
     log.info('Source Path: %s' % rootPath)
     mover = None
@@ -155,7 +154,7 @@ if __name__ == '__main__':
 
     if config.get("Network", "useProxy") == 'True':
         log.info('Using Proxy')
-        httpproxy = urllib2.ProxyHandler({'http': myobfuscate.deobfuscate(config.get('Network', 'proxy'))})
+        httpproxy = urllib2.ProxyHandler({'http': mycrypt.decrypt(config.get('Network', 'proxy'))})
         opener = urllib2.build_opener(httpproxy)
         urllib2.install_opener(opener)
 
@@ -170,7 +169,7 @@ if __name__ == '__main__':
             log.info('Performing Self-Update')
             updater.update()
             log.info('Re-spawning %s' % ' '.join(args))
-            updater.respawn(PROJECT_ROOT)
+            updater.respawn()
 
     #===========================================================================
     # #Add a Signal Handler for Ctrl + C
@@ -249,7 +248,7 @@ if __name__ == '__main__':
                         hostname = config.get('XBMC', 'hostname')
                         port = config.get('XBMC', 'port')
                         username = config.get('XBMC', 'username')
-                        password = myobfuscate.deobfuscate(config.get('XBMC', 'password'))
+                        password = mycrypt.decrypt(config.get('XBMC', 'password'))
                         libraryPath = config.get('XBMC', 'libraryPath')
 
                         http_address = 'http://%s:%s/jsonrpc' % (hostname, port)

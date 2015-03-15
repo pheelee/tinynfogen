@@ -1,4 +1,4 @@
-'''
+"""
 Created on 30.04.2013
 
 @author: ritterph
@@ -25,37 +25,39 @@ dstFolder must have the following structure:
         T-Z
 
 Folders starting with _ are ignored
-'''
+"""
 
-
-import os, re
+import os
+import re
 import shutil
-from log import TNGLog
-from tools import enzyme
-from tools.enzyme.exceptions import ParseError
-from movie import Movie
+
+from tng.core.log import TNGLog
+from libs import enzyme
+from libs.enzyme.exceptions import ParseError
+from tng.core.movie import Movie
 
 
 class Mover(object):
 
-    _dstFolders = {}
-    _IgnoreFolders = ('_','@')
-    
+    __dstFolders = {}
+    __IgnoreFolders = ('_','@')
+    dst = u''
+
     def __init__(self,RootDestination):
         #Root Folder has to Contain Folders like this A-D, E-G etc.
-        if self._ContainsGroupFolders(RootDestination) == False:
-            self._dstFolders['root'] = RootDestination
+        if self.__ContainsGroupFolders(RootDestination) is False:
+            self.__dstFolders['root'] = RootDestination
         else:
-            self._GetDstFolders(RootDestination)
+            self.__GetDstFolders(RootDestination)
 
         self.log = TNGLog()
         
     def move(self,src,forceOverwrite):
-        if self._dstFolders.has_key('root'):
-            dst = os.path.join(self._dstFolders['root'],os.path.basename(src))
+        if self.__dstFolders.has_key('root'):
+            dst = os.path.join(self.__dstFolders['root'],os.path.basename(src))
         else:
             try:
-                dst = os.path.join(self._ChooseDestination(src),os.path.basename(src))
+                dst = os.path.join(self.__ChooseDestination(src),os.path.basename(src))
             except AttributeError:
                 self.log.error('Could not move %s' % os.path.basename(src))
                 return False
@@ -64,21 +66,21 @@ class Mover(object):
             #There exists already a Movie
             #we compare the resolution or size using the metadata of the movie
             try:
-	            compare = Comparer(src,dst)
+                compare = Comparer(src,dst)
 	
-	            if compare.hasResolution():
-	                if compare.item[src]['resolution'] > compare.item[dst]['resolution']:
-	                    overwrite = True
-	                else:
-	                    overwrite = False
-	            else:
-	                if compare.item[src]['size'] > compare.item[dst]['size']:
-	                    overwrite = True
-	                else:
-	                    overwrite = False
+                if compare.hasResolution():
+                    if compare.item[src]['resolution'] > compare.item[dst]['resolution']:
+                        overwrite = True
+                    else:
+                        overwrite = False
+                else:
+                    if compare.item[src]['size'] > compare.item[dst]['size']:
+                        overwrite = True
+                    else:
+                        overwrite = False
             except Exception, e:
-	        	overwrite = False
-	        	self.log.error(unicode(e))
+                overwrite = False
+                self.log.error(unicode(e))
                 
             if overwrite or forceOverwrite:
                 self.log.info('Overwriting existing Movie : %s' % dst)
@@ -91,42 +93,42 @@ class Mover(object):
         else:
             shutil.move(src, dst)
             self.log.info('Movie moved : %s' % dst)
-        
+
         self.dst = dst
         return True
     
     
-    def _ContainsGroupFolders(self,path):
+    def __ContainsGroupFolders(self,path):
         contains = False
         for item in os.listdir(path):
-            if not item[0] in self._IgnoreFolders:
+            if not item[0] in self.__IgnoreFolders:
                 if '-' in item and len(item) == 3:
                     contains= True
                     
         return contains
     
-    def _ChooseDestination(self,name):
+    def __ChooseDestination(self,name):
         if os.path.basename(name).startswith(('The','Der','Die','Das')):
             _letter = os.path.basename(name)[4]
         else:
             _letter = os.path.basename(name)[0]
         
-        if self._is_number(_letter):
+        if self.__is_number(_letter):
             _letter = 'A' #For now we put Movies beginning with a Number to Folder A-
-        elif _letter.isalnum() == False: #if we have a special char, we search for the first Alphabetic Char
-            _letter = self._getFirstAlphaChar(os.path.basename(name))
+        elif _letter.isalnum() is False: #if we have a special char, we search for the first Alphabetic Char
+            _letter = self.__getFirstAlphaChar(os.path.basename(name))
 		
 		
-        if _letter == False:
+        if _letter is False:
             self.log.error('Could not get Start Char for Movie %s' % os.path.basename(name))
             return False
         else:
-            for i in self._dstFolders.keys():
-                if _letter.upper() in self._dstFolders[i]:
+            for i in self.__dstFolders.keys():
+                if _letter.upper() in self.__dstFolders[i]:
                     return i
             
-
-    def _getFirstAlphaChar(self,string):
+    @staticmethod
+    def __getFirstAlphaChar(string):
         i = 0
         while i < len(string):
             if string[i].isalpha():
@@ -134,15 +136,16 @@ class Mover(object):
             i += 1
         return False
     
-
-    def _is_number(self,_s):
+    @staticmethod
+    def __is_number(_s):
         try:
             float(_s)
             return True
         except ValueError:
             return False
 
-    def _CalcChars(self,string):
+    @staticmethod
+    def __CalcChars(string):
         charset = []
         alpha = ('A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z')
         firstIndex = alpha.index(string[0])
@@ -153,13 +156,13 @@ class Mover(object):
             
         return charset
         
-    def _GetDstFolders(self,path):
+    def __GetDstFolders(self,path):
         for item in os.listdir(path):
             p = os.path.join(path,item)
-            if os.path.isdir(p) and not item[0] in self._IgnoreFolders:
+            if os.path.isdir(p) and not item[0] in self.__IgnoreFolders:
                 #check for valid group folder and create Dictionary
                 if re.search('\w{1}-\w{1}',item):
-                    self._dstFolders[p] = self._CalcChars(item)
+                    self.__dstFolders[p] = self.__CalcChars(item)
 
 class Comparer(object):
     
@@ -167,7 +170,7 @@ class Comparer(object):
         self.log = TNGLog()
         self.item = {}
         if self.addFile(path1) or self.addFile(path2):
-        	raise Exception("skipping compare: at least one file is missing")
+            raise Exception("skipping compare: at least one file is missing")
     
     def addFile(self,path):
         m = Movie(path)
@@ -176,19 +179,19 @@ class Comparer(object):
             return False
         mfile = os.path.join(path,mcont)
         self.item[path] = {}
-        self.item[path]['resolution'] = self._getResolution(mfile)
-        self.item[path]['size'] = self._getSize(mfile)
+        self.item[path]['resolution'] = self.__getResolution(mfile)
+        self.item[path]['size'] = os.path.getsize(path)
         
         return True
     
     def hasResolution(self):
         for i in self.item.keys():
-            if self.item[i]['resolution'] == False:
+            if self.item[i]['resolution'] is False:
                 return False
         return True
     
     
-    def _getResolution(self,path):
+    def __getResolution(self,path):
 
         self.log.debug('Getting Metadata for: %s' % path)
         try:
@@ -201,8 +204,5 @@ class Comparer(object):
         except:
             self.log.warning('Metadata fetching failed: %s' % path)
         return False
-     
-    def _getSize(self,path):
-        return os.path.getsize(path)
         
     

@@ -1,8 +1,8 @@
-'''
+"""
 Created on 30.03.2013
 
 @author: ritterph
-'''
+"""
 
 import cgi
 import re, os
@@ -39,7 +39,6 @@ class NFO(object):
             self.logger.debug('Found IMDB in: %s' % self.path)
             return IMDBid[0]
         else:
-            self.logger.log
             return False
     
     def CheckElement(self,key,value):  
@@ -58,11 +57,11 @@ class NFO(object):
             return False
  
     def Write(self,NamingDict):
-        self._NormalizeData()
-        with open(self.path,'w') as NFO:
+        self.__NormalizeData()
+        with open(self.path,'w') as NFOfile:
             #Write the Header
             for line in self.header:
-                NFO.write(line + '\n')
+                NFOfile.write(str(line + '\n'))
             
             #Write the main Content
             for item in NamingDict.keys():
@@ -70,19 +69,20 @@ class NFO(object):
                 if isinstance(content, unicode):
                     content = cgi.escape(content)
                 s = '  <%s>%s</%s>' % (item,content,item)
-                NFO.write(s.encode('utf-8') + '\n')
+                NFOfile.write(s.encode('utf-8') + '\n')
             
             #Write the Footer
             for line in self.footer:
-                NFO.write(line + '\n')
-    
-    def _multiValueToString(self,value):
+                NFOfile.write(str(line + '\n'))
+
+    @staticmethod
+    def __multiValueToString(value):
         s=''
         for item in value:
             s += item['name'] + ', '
         return s.rstrip(', ')
     
-    def _NormalizeData(self):
+    def __NormalizeData(self):
         for sub in self.content:
             if isinstance(self.content[sub], list):
-                self.content[sub] = self._multiValueToString(self.content[sub])
+                self.content[sub] = self.__multiValueToString(self.content[sub])
